@@ -6,7 +6,7 @@ const menuItems = [
   { label: 'Usuarios', path: '/usuarios' },
   { label: 'Documentos', path: '/documentos' },
   { label: 'Recursos RA', path: '/recursos-ra' },
-  { label: 'Preguntas Frecuentes', path: '#' },
+  { label: 'Preguntas Frecuentes', path: '/preguntas-frecuentes' },
   { label: 'Estadísticas', path: '#' },
 ];
 

@@ -4,6 +4,7 @@ import { Login } from './pages/Login';
 import { Usuarios } from './pages/Usuarios';
 import { Documentos } from './pages/Documentos';
 import { RecursosRA } from './pages/RecursosRA';
+import { PreguntasFrecuentes } from './pages/PreguntasFrecuentes';
 
 function RequireAuth({ children, isAuth }: { children: ReactElement, isAuth: boolean }) {
   const location = useLocation();
@@ -33,6 +34,11 @@ function App() {
         <Route path="/recursos-ra" element={
           <RequireAuth isAuth={isAuth}>
             <RecursosRA />
+          </RequireAuth>
+        } />
+        <Route path="/preguntas-frecuentes" element={
+          <RequireAuth isAuth={isAuth}>
+            <PreguntasFrecuentes />
           </RequireAuth>
         } />
         <Route path="*" element={<Navigate to="/login" replace />} />
