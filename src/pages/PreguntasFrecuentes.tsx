@@ -12,12 +12,12 @@ const preguntas = [
   '¿Cómo solicito un certificado de estudios o de notas?'
 ];
 
-export const PreguntasFrecuentes: React.FC = () => {
+export const PreguntasFrecuentes: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
   return (
     <div className="min-h-screen bg-[#d3d3d3] flex">
       <Sidebar selected="Preguntas Frecuentes" />
       <div className="flex-1 flex flex-col">
-        <AdminHeader />
+        <AdminHeader onLogout={onLogout} />
         <main className="flex-1 p-8">
           <div className="flex items-center mb-6 gap-4">
             <div className="flex items-center bg-white rounded-full px-4 py-2 w-full max-w-md shadow">

@@ -16,12 +16,12 @@ const icono = (tipo: string) => tipo === 'pdf' ? (
   <svg className="w-16 h-16 mx-auto" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#fff"/><path d="M12 8a4 4 0 0 1 4-4h16l8 8v28a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4V8z" fill="#fff"/><path d="M36 8v8H28V0h4a4 4 0 0 1 4 4v4z" fill="#1976d2"/><rect x="14" y="32" width="20" height="6" rx="2" fill="#1976d2"/><rect x="14" y="24" width="20" height="4" rx="2" fill="#1976d2"/></svg>
 );
 
-export const Documentos: React.FC = () => {
+export const Documentos: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
   return (
     <div className="min-h-screen bg-[#d3d3d3] flex">
       <Sidebar selected="Documentos" />
       <div className="flex-1 flex flex-col">
-        <AdminHeader />
+        <AdminHeader onLogout={onLogout} />
         <main className="flex-1 p-8">
           <div className="flex items-center mb-6 gap-4">
             <div className="flex items-center bg-white rounded-full px-4 py-2 w-full max-w-md shadow">

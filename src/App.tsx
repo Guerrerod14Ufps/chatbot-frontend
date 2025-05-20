@@ -17,28 +17,32 @@ function RequireAuth({ children, isAuth }: { children: ReactElement, isAuth: boo
 function App() {
   const [isAuth, setIsAuth] = useState<boolean>(false);
 
+  const handleLogout = () => {
+    setIsAuth(false);
+  };
+
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login onLogin={() => setIsAuth(true)} />} />
         <Route path="/usuarios" element={
           <RequireAuth isAuth={isAuth}>
-            <Usuarios />
+            <Usuarios onLogout={handleLogout} />
           </RequireAuth>
         } />
         <Route path="/documentos" element={
           <RequireAuth isAuth={isAuth}>
-            <Documentos />
+            <Documentos onLogout={handleLogout} />
           </RequireAuth>
         } />
         <Route path="/recursos-ra" element={
           <RequireAuth isAuth={isAuth}>
-            <RecursosRA />
+            <RecursosRA onLogout={handleLogout} />
           </RequireAuth>
         } />
         <Route path="/preguntas-frecuentes" element={
           <RequireAuth isAuth={isAuth}>
-            <PreguntasFrecuentes />
+            <PreguntasFrecuentes onLogout={handleLogout} />
           </RequireAuth>
         } />
         <Route path="*" element={<Navigate to="/login" replace />} />

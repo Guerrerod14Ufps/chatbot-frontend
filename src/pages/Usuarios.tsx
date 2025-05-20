@@ -9,12 +9,12 @@ const usuarios = [
   { nombre: 'MAURICIO DI DONATO SANCHEZ', rol: 'Estudiante', estado: 'ACTIVO' },
 ];
 
-export const Usuarios: React.FC = () => {
+export const Usuarios: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
   return (
     <div className="min-h-screen bg-[#d3d3d3] flex">
       <Sidebar selected="Usuarios" />
       <div className="flex-1 flex flex-col">
-        <AdminHeader />
+        <AdminHeader onLogout={onLogout} />
         <main className="flex-1 p-8">
           <div className="flex items-center mb-6">
             <div className="flex items-center bg-white rounded-full px-4 py-2 w-full max-w-md shadow">
