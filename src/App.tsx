@@ -1,9 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, type ReactElement } from 'react';
 import { Login } from './pages/Login';
 import { Usuarios } from './pages/Usuarios';
+import { Documentos } from './pages/Documentos';
+import { RecursosRA } from './pages/RecursosRA';
 
-function RequireAuth({ children, isAuth }: { children: JSX.Element, isAuth: boolean }) {
+function RequireAuth({ children, isAuth }: { children: ReactElement, isAuth: boolean }) {
   const location = useLocation();
   if (!isAuth) {
     return <Navigate to="/login" state={{ from: location }} replace />;
@@ -21,6 +23,16 @@ function App() {
         <Route path="/usuarios" element={
           <RequireAuth isAuth={isAuth}>
             <Usuarios />
+          </RequireAuth>
+        } />
+        <Route path="/documentos" element={
+          <RequireAuth isAuth={isAuth}>
+            <Documentos />
+          </RequireAuth>
+        } />
+        <Route path="/recursos-ra" element={
+          <RequireAuth isAuth={isAuth}>
+            <RecursosRA />
           </RequireAuth>
         } />
         <Route path="*" element={<Navigate to="/login" replace />} />

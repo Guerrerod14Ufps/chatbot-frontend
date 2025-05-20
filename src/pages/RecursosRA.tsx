@@ -3,23 +3,22 @@ import { Sidebar } from '../components/Sidebar';
 import { AdminHeader } from '../components/AdminHeader';
 import { Search, Upload, MoreHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 
-const documentos = [
-  { nombre: 'Requisitos Grado.pdf', tipo: 'pdf' },
-  { nombre: 'Formato Practicas.docx', tipo: 'doc' },
-  { nombre: 'Movilidad Estudiantil.pdf', tipo: 'pdf' },
-  { nombre: 'Formato Anteproyecto.docx', tipo: 'doc' },
+const recursos = [
+  { nombre: 'Campus Universitario', tipo: 'ar' },
+  { nombre: 'Laboratorio de...', tipo: 'ar' },
+  { nombre: 'Árbol Binario Bu...', tipo: 'ar' },
 ];
 
-const icono = (tipo: string) => tipo === 'pdf' ? (
-  <svg className="w-16 h-16 mx-auto" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#fff"/><path d="M12 8a4 4 0 0 1 4-4h16l8 8v28a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4V8z" fill="#fff"/><path d="M36 8v8H28V0h4a4 4 0 0 1 4 4v4z" fill="#d32f2f"/><text x="14" y="36" fontSize="14" fontWeight="bold" fill="#d32f2f">PDF</text></svg>
-) : (
-  <svg className="w-16 h-16 mx-auto" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#fff"/><path d="M12 8a4 4 0 0 1 4-4h16l8 8v28a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4V8z" fill="#fff"/><path d="M36 8v8H28V0h4a4 4 0 0 1 4 4v4z" fill="#1976d2"/><rect x="14" y="32" width="20" height="6" rx="2" fill="#1976d2"/><rect x="14" y="24" width="20" height="4" rx="2" fill="#1976d2"/></svg>
+const iconoAR = (
+  <div className="w-16 h-16 mx-auto bg-black rounded flex items-center justify-center">
+    <span className="text-white text-3xl font-bold">AR</span>
+  </div>
 );
 
-export const Documentos: React.FC = () => {
+export const RecursosRA: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#d3d3d3] flex">
-      <Sidebar selected="Documentos" />
+      <Sidebar selected="Recursos RA" />
       <div className="flex-1 flex flex-col">
         <AdminHeader />
         <main className="flex-1 p-8">
@@ -28,25 +27,23 @@ export const Documentos: React.FC = () => {
               <Search className="text-gray-400 mr-2 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Buscar documento"
+                placeholder="Buscar recurso"
                 className="flex-1 bg-transparent outline-none text-gray-700"
               />
             </div>
             <select className="bg-white rounded-full px-4 py-2 shadow text-gray-700 text-sm">
               <option>Tipo</option>
-              <option>PDF</option>
-              <option>DOC</option>
             </select>
             <button className="bg-white rounded-full px-4 py-2 shadow flex items-center gap-2 text-gray-700 text-sm">
-              <Upload className="w-5 h-5" /> Subir doc
+              <Upload className="w-5 h-5" /> Subir
             </button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {documentos.map((doc, idx) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {recursos.map((recurso, idx) => (
               <div key={idx} className="bg-white rounded shadow p-4 flex flex-col items-center">
-                {icono(doc.tipo)}
+                {iconoAR}
                 <div className="mt-2 text-xs font-medium text-gray-700 truncate w-full text-center">
-                  {doc.nombre}
+                  {recurso.nombre}
                 </div>
                 <button className="mt-2 text-gray-400 hover:text-gray-600">
                   <MoreHorizontal className="w-5 h-5" />
