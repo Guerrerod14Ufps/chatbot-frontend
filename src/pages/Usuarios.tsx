@@ -104,7 +104,7 @@ export const Usuarios: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
             animate="visible"
             className="grid grid-cols-1 md:grid-cols-3 gap-6"
           >
-            {filteredUsuarios.map((usuario, idx) => (
+            {filteredUsuarios.map((usuario) => (
               <motion.div key={usuario.id} variants={itemVariants}>
                 <AnimatedCard className="p-4">
                   <div className="flex items-center gap-4">

@@ -7,7 +7,7 @@ interface SidebarProps {
   selected: string;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ selected }) => {
+export const Sidebar: React.FC<SidebarProps> = ({  }) => {
   const [isMinimized, setIsMinimized] = useState(false);
   const location = useLocation();
   const { rol } = useAuth();
