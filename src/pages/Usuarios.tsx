@@ -1,15 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Sidebar } from '../components/Sidebar';
 import { AdminHeader } from '../components/AdminHeader';
 import { Search, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, UserCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { AnimatedCard } from '../components/AnimatedCard';
-
-const usuarios = [
-  { id: 1, nombre: 'ANDERSSON CAMILO CARDENAS GUARIN', rol: 'Estudiante', estado: 'ACTIVO' },
-  { id: 2, nombre: 'ANDRES ALFONSO PARRA GARZON', rol: 'Estudiante', estado: 'INACTIVO' },
-  { id: 3, nombre: 'MAURICIO DI DONATO SANCHEZ', rol: 'Estudiante', estado: 'ACTIVO' },
-];
+import * as api from '../services/api';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -36,15 +31,25 @@ export const Usuarios: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRol, setSelectedRol] = useState('');
   const [selectedEstado, setSelectedEstado] = useState('');
+  const [usuarios, setUsuarios] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.getUsers()
+      .then(setUsuarios)
+      .catch((err) => setError(err.detail || 'Error al cargar usuarios'))
+      .finally(() => setLoading(false));
+  }, []);
 
   const filteredUsuarios = useMemo(() => {
     return usuarios.filter(usuario => {
-      const matchesSearch = usuario.nombre.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesRol = !selectedRol || usuario.rol === selectedRol;
-      const matchesEstado = !selectedEstado || usuario.estado === selectedEstado;
+      const matchesSearch = usuario.fullname?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesRol = !selectedRol || usuario.role === selectedRol;
+      const matchesEstado = !selectedEstado || (usuario.is_active ? 'ACTIVO' : 'INACTIVO') === selectedEstado;
       return matchesSearch && matchesRol && matchesEstado;
     });
-  }, [searchTerm, selectedRol, selectedEstado]);
+  }, [searchTerm, selectedRol, selectedEstado, usuarios]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex">
@@ -75,9 +80,9 @@ export const Usuarios: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
               onChange={(e) => setSelectedRol(e.target.value)}
             >
               <option value="">Todos los roles</option>
-              <option value="Estudiante">Estudiante</option>
-              <option value="Profesor">Profesor</option>
-              <option value="Admin">Admin</option>
+              <option value="estudiante">Estudiante</option>
+              <option value="docente">Profesor</option>
+              <option value="admin">Admin</option>
             </motion.select>
             <motion.select
               whileHover={{ scale: 1.02 }}
@@ -98,63 +103,73 @@ export const Usuarios: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
             </motion.button>
           </motion.div>
 
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="grid grid-cols-1 md:grid-cols-3 gap-6"
-          >
-            {filteredUsuarios.map((usuario) => (
-              <motion.div key={usuario.id} variants={itemVariants}>
-                <AnimatedCard className="p-4">
-                  <div className="flex items-center gap-4">
-                    <motion.div
-                      whileHover={{ scale: 1.1, rotate: 5 }}
-                      className="relative w-12 h-12"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-br from-red-500 to-red-600 rounded-full shadow-lg" />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <UserCircle className="w-8 h-8 text-white" />
-                      </div>
-                    </motion.div>
-                    <div>
-                      <h3 className="font-semibold text-gray-800">{usuario.nombre}</h3>
-                      <p className="text-sm text-gray-600">{usuario.rol}</p>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex items-center justify-between">
-                    <div className="flex gap-2">
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        usuario.estado === 'ACTIVO' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {usuario.estado}
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <motion.button
+          {loading ? (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center text-gray-500 mt-8">
+              Cargando usuarios...
+            </motion.div>
+          ) : error ? (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center text-red-600 mt-8">
+              {error}
+            </motion.div>
+          ) : (
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="grid grid-cols-1 md:grid-cols-3 gap-6"
+            >
+              {filteredUsuarios.map((usuario, idx) => (
+                <motion.div key={usuario.id} variants={itemVariants}>
+                  <AnimatedCard className="p-4">
+                    <div className="flex items-center gap-4">
+                      <motion.div
                         whileHover={{ scale: 1.1, rotate: 5 }}
-                        whileTap={{ scale: 0.9 }}
-                        className="text-gray-400 hover:text-red-600"
+                        className="relative w-12 h-12"
                       >
-                        <Pencil className="w-4 h-4" />
-                      </motion.button>
-                      <motion.button
-                        whileHover={{ scale: 1.1, rotate: -5 }}
-                        whileTap={{ scale: 0.9 }}
-                        className="text-gray-400 hover:text-red-600"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </motion.button>
+                        <div className="absolute inset-0 bg-gradient-to-br from-red-500 to-red-600 rounded-full shadow-lg" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <UserCircle className="w-8 h-8 text-white" />
+                        </div>
+                      </motion.div>
+                      <div>
+                        <h3 className="font-semibold text-gray-800">{usuario.fullname}</h3>
+                        <p className="text-sm text-gray-600">{usuario.role}</p>
+                      </div>
                     </div>
-                  </div>
-                </AnimatedCard>
-              </motion.div>
-            ))}
-          </motion.div>
+                    <div className="mt-4 flex items-center justify-between">
+                      <div className="flex gap-2">
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          usuario.is_active 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {usuario.is_active ? 'ACTIVO' : 'INACTIVO'}
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        <motion.button
+                          whileHover={{ scale: 1.1, rotate: 5 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="text-gray-400 hover:text-red-600"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.1, rotate: -5 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="text-gray-400 hover:text-red-600"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </motion.button>
+                      </div>
+                    </div>
+                  </AnimatedCard>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
 
-          {filteredUsuarios.length === 0 && (
+          {filteredUsuarios.length === 0 && !loading && !error && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

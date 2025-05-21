@@ -43,4 +43,14 @@ export async function getProfile() {
 
 export function logout() {
   localStorage.removeItem('token');
+}
+
+export async function getUsers() {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${API_URL}/users/`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  console.log(res);
+  if (!res.ok) throw await res.json();
+  return await res.json();
 } 
