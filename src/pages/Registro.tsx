@@ -1,32 +1,21 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, ArrowRight, GraduationCap, User, Shield } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { User, Mail, Lock, ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { AnimatedCard } from '../components/AnimatedCard';
-import { useAuth } from '../contexts/AuthContext';
 
-export const Login: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const { login } = useAuth();
-  const navigate = useNavigate();
+export const Registro: React.FC = () => {
+  const [formData, setFormData] = useState({
+    nombre: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Aquí iría la lógica de autenticación
-    console.log('Login:', { email, password });
-    login('admin');
-    navigate('/usuarios');
-  };
-
-  // Simulación de login por tipo de usuario
-  const handleLoginTipo = (tipo: 'estudiante' | 'profesor' | 'admin') => {
-    login(tipo);
-    if (tipo === 'admin') {
-      navigate('/usuarios');
-    } else {
-      navigate('/chatbot');
-    }
+    // Aquí iría la lógica de registro
+    console.log('Datos de registro:', formData);
   };
 
   const containerVariants = {
@@ -66,11 +55,30 @@ export const Login: React.FC = () => {
             className="space-y-6"
           >
             <motion.div variants={itemVariants} className="text-center">
-              <h2 className="text-2xl font-bold text-gray-800">Iniciar Sesión</h2>
-              <p className="text-gray-600 mt-2">Ingresa tus credenciales para continuar</p>
+              <h2 className="text-2xl font-bold text-gray-800">Crear Cuenta</h2>
+              <p className="text-gray-600 mt-2">Ingresa tus datos para registrarte</p>
             </motion.div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              <motion.div variants={itemVariants}>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nombre Completo
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    placeholder="Tu nombre"
+                    value={formData.nombre}
+                    onChange={(e) => setFormData({...formData, nombre: e.target.value})}
+                    required
+                  />
+                </div>
+              </motion.div>
+
               <motion.div variants={itemVariants}>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Correo Electrónico
@@ -83,8 +91,8 @@ export const Login: React.FC = () => {
                     type="email"
                     className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                     placeholder="tu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
                     required
                   />
                 </div>
@@ -102,8 +110,27 @@ export const Login: React.FC = () => {
                     type="password"
                     className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                     placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={formData.password}
+                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    required
+                  />
+                </div>
+              </motion.div>
+
+              <motion.div variants={itemVariants}>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Confirmar Contraseña
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="password"
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    placeholder="••••••••"
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
                     required
                   />
                 </div>
@@ -116,56 +143,19 @@ export const Login: React.FC = () => {
                   type="submit"
                   className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white py-2 px-4 rounded-lg hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200"
                 >
-                  Iniciar Sesión
+                  Registrarse
                 </motion.button>
               </motion.div>
             </form>
 
-            <motion.div variants={itemVariants} className="flex flex-col items-center gap-2">
+            <motion.div variants={itemVariants} className="text-center">
               <Link 
-                to="/recuperar-password" 
-                className="text-sm text-gray-600 hover:text-red-600"
-              >
-                ¿Olvidaste tu contraseña?
-              </Link>
-              <Link 
-                to="/registro" 
+                to="/login" 
                 className="inline-flex items-center text-sm text-gray-600 hover:text-red-600"
               >
-                Crear una cuenta
-                <ArrowRight className="w-4 h-4 ml-1" />
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Volver al inicio de sesión
               </Link>
-            </motion.div>
-
-            {/* Botones de acceso rápido por tipo de usuario */}
-            <motion.div variants={itemVariants} className="flex flex-col gap-2 pt-4">
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-400 to-red-500 text-white py-2 px-4 rounded-lg shadow hover:from-red-500 hover:to-red-600 transition-all"
-                onClick={() => handleLoginTipo('estudiante')}
-                type="button"
-              >
-                <GraduationCap className="w-5 h-5" /> Entrar como Estudiante
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-400 to-red-500 text-white py-2 px-4 rounded-lg shadow hover:from-red-500 hover:to-red-600 transition-all"
-                onClick={() => handleLoginTipo('profesor')}
-                type="button"
-              >
-                <User className="w-5 h-5" /> Entrar como Profesor
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-gray-700 to-gray-900 text-white py-2 px-4 rounded-lg shadow hover:from-gray-800 hover:to-black transition-all"
-                onClick={() => handleLoginTipo('admin')}
-                type="button"
-              >
-                <Shield className="w-5 h-5" /> Entrar como Admin
-              </motion.button>
             </motion.div>
           </motion.div>
         </AnimatedCard>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Users, FileText, Box, HelpCircle, Menu } from 'lucide-react';
+import { Users, FileText, Box, HelpCircle, Menu, BarChart2, MessageCircle } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface SidebarProps {
   selected: string;
@@ -9,13 +10,19 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ selected }) => {
   const [isMinimized, setIsMinimized] = useState(false);
   const location = useLocation();
+  const { rol } = useAuth();
 
+  // Opciones según el rol
   const menuItems = [
-    { path: '/usuarios', icon: Users, label: 'Usuarios' },
-    { path: '/documentos', icon: FileText, label: 'Documentos' },
-    { path: '/recursos-ra', icon: Box, label: 'Recursos RA' },
-    { path: '/preguntas-frecuentes', icon: HelpCircle, label: 'Preguntas Frecuentes' },
+    { path: '/usuarios', icon: Users, label: 'Usuarios', roles: ['admin'] },
+    { path: '/documentos', icon: FileText, label: 'Documentos', roles: ['admin'] },
+    { path: '/recursos-ra', icon: Box, label: 'Recursos RA', roles: ['admin', 'profesor', 'estudiante'] },
+    { path: '/chatbot', icon: MessageCircle, label: 'Chatbot', roles: ['admin', 'profesor', 'estudiante'] },
+    { path: '/preguntas-frecuentes', icon: HelpCircle, label: 'Preguntas Frecuentes', roles: ['admin', 'profesor', 'estudiante'] },
+    { path: '/estadisticas', icon: BarChart2, label: 'Estadísticas', roles: ['admin'] },
   ];
+
+  const itemsFiltrados = menuItems.filter(item => !rol || item.roles.includes(rol));
 
   return (
     <aside className={`bg-white shadow-lg transition-all duration-300 ${isMinimized ? 'w-16' : 'w-64'}`}>
@@ -29,7 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ selected }) => {
         {!isMinimized && <span className="text-lg font-semibold text-white">Menú</span>}
       </div>
       <nav className="mt-4">
-        {menuItems.map((item) => {
+        {itemsFiltrados.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
           return (

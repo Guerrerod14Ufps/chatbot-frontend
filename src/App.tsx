@@ -1,53 +1,83 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useState, type ReactElement } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Login } from './pages/Login';
+import { Registro } from './pages/Registro';
+import { RecuperarPassword } from './pages/RecuperarPassword';
 import { Usuarios } from './pages/Usuarios';
 import { Documentos } from './pages/Documentos';
 import { RecursosRA } from './pages/RecursosRA';
 import { PreguntasFrecuentes } from './pages/PreguntasFrecuentes';
+import { Estadisticas } from './pages/Estadisticas';
+import { Chatbot } from './pages/Chatbot';
+import { useAuth } from './contexts/AuthContext';
 
-function RequireAuth({ children, isAuth }: { children: ReactElement, isAuth: boolean }) {
-  const location = useLocation();
-  if (!isAuth) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+function ProtectedRoute({ children, isAuthenticated }: { children: React.ReactNode, isAuthenticated: boolean }) {
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
   }
   return children;
 }
 
 function App() {
-  const [isAuth, setIsAuth] = useState<boolean>(false);
-
-  const handleLogout = () => {
-    setIsAuth(false);
-  };
+  const { isAuthenticated } = useAuth();
 
   return (
-    <BrowserRouter>
+    <Router>
       <Routes>
-        <Route path="/login" element={<Login onLogin={() => setIsAuth(true)} />} />
-        <Route path="/usuarios" element={
-          <RequireAuth isAuth={isAuth}>
-            <Usuarios onLogout={handleLogout} />
-          </RequireAuth>
-        } />
-        <Route path="/documentos" element={
-          <RequireAuth isAuth={isAuth}>
-            <Documentos onLogout={handleLogout} />
-          </RequireAuth>
-        } />
-        <Route path="/recursos-ra" element={
-          <RequireAuth isAuth={isAuth}>
-            <RecursosRA onLogout={handleLogout} />
-          </RequireAuth>
-        } />
-        <Route path="/preguntas-frecuentes" element={
-          <RequireAuth isAuth={isAuth}>
-            <PreguntasFrecuentes onLogout={handleLogout} />
-          </RequireAuth>
-        } />
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/registro" element={<Registro />} />
+        <Route path="/recuperar-password" element={<RecuperarPassword />} />
+        <Route
+          path="/usuarios"
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <Usuarios />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/documentos"
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <Documentos />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/recursos-ra"
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <RecursosRA />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/chatbot"
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <Chatbot />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/preguntas-frecuentes"
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <PreguntasFrecuentes />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/estadisticas"
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <Estadisticas />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
-    </BrowserRouter>
+    </Router>
   );
 }
 

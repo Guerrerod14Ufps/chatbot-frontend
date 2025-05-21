@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Sidebar } from '../components/Sidebar';
 import { AdminHeader } from '../components/AdminHeader';
-import { Search, Upload, MoreHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Upload, MoreHorizontal, ChevronLeft, ChevronRight, FileText, File } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { AnimatedCard } from '../components/AnimatedCard';
 
 const documentos = [
   { nombre: 'Requisitos Grado.pdf', tipo: 'pdf' },
@@ -11,54 +13,169 @@ const documentos = [
 ];
 
 const icono = (tipo: string) => tipo === 'pdf' ? (
-  <svg className="w-16 h-16 mx-auto" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#fff"/><path d="M12 8a4 4 0 0 1 4-4h16l8 8v28a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4V8z" fill="#fff"/><path d="M36 8v8H28V0h4a4 4 0 0 1 4 4v4z" fill="#d32f2f"/><text x="14" y="36" fontSize="14" fontWeight="bold" fill="#d32f2f">PDF</text></svg>
+  <div className="relative w-16 h-16 mx-auto">
+    <motion.div
+      whileHover={{ scale: 1.1, rotate: 5 }}
+      className="absolute inset-0 bg-red-500 rounded-lg shadow-lg"
+    />
+    <motion.div
+      whileHover={{ scale: 1.1, rotate: -5 }}
+      className="absolute inset-0 flex items-center justify-center"
+    >
+      <FileText className="w-10 h-10 text-white" />
+    </motion.div>
+  </div>
 ) : (
-  <svg className="w-16 h-16 mx-auto" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#fff"/><path d="M12 8a4 4 0 0 1 4-4h16l8 8v28a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4V8z" fill="#fff"/><path d="M36 8v8H28V0h4a4 4 0 0 1 4 4v4z" fill="#1976d2"/><rect x="14" y="32" width="20" height="6" rx="2" fill="#1976d2"/><rect x="14" y="24" width="20" height="4" rx="2" fill="#1976d2"/></svg>
+  <div className="relative w-16 h-16 mx-auto">
+    <motion.div
+      whileHover={{ scale: 1.1, rotate: 5 }}
+      className="absolute inset-0 bg-blue-500 rounded-lg shadow-lg"
+    />
+    <motion.div
+      whileHover={{ scale: 1.1, rotate: -5 }}
+      className="absolute inset-0 flex items-center justify-center"
+    >
+      <File className="w-10 h-10 text-white" />
+    </motion.div>
+  </div>
 );
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5
+    }
+  }
+};
+
 export const Documentos: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedType, setSelectedType] = useState('');
+
+  const filteredDocumentos = useMemo(() => {
+    return documentos.filter(doc => {
+      const matchesSearch = doc.nombre.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesType = !selectedType || doc.tipo === selectedType.toLowerCase();
+      return matchesSearch && matchesType;
+    });
+  }, [searchTerm, selectedType]);
+
   return (
-    <div className="min-h-screen bg-[#d3d3d3] flex">
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex">
       <Sidebar selected="Documentos" />
       <div className="flex-1 flex flex-col">
         <AdminHeader onLogout={onLogout} />
         <main className="flex-1 p-8">
-          <div className="flex items-center mb-6 gap-4">
-            <div className="flex items-center bg-white rounded-full px-4 py-2 w-full max-w-md shadow">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex items-center mb-6 gap-4"
+          >
+            <div className="flex items-center bg-white rounded-full px-4 py-2 w-full max-w-md shadow-lg hover:shadow-xl transition-shadow duration-300">
               <Search className="text-gray-400 mr-2 w-5 h-5" />
               <input
                 type="text"
                 placeholder="Buscar documento"
                 className="flex-1 bg-transparent outline-none text-gray-700"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <select className="bg-white rounded-full px-4 py-2 shadow text-gray-700 text-sm">
-              <option>Tipo</option>
-              <option>PDF</option>
-              <option>DOC</option>
-            </select>
-            <button className="bg-white rounded-full px-4 py-2 shadow flex items-center gap-2 text-gray-700 text-sm">
+            <motion.select
+              whileHover={{ scale: 1.02 }}
+              className="bg-white rounded-full px-4 py-2 shadow-lg hover:shadow-xl transition-shadow duration-300 text-gray-700 text-sm"
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+            >
+              <option value="">Todos los tipos</option>
+              <option value="pdf">PDF</option>
+              <option value="doc">DOC</option>
+            </motion.select>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="bg-white rounded-full px-4 py-2 shadow-lg hover:shadow-xl transition-shadow duration-300 flex items-center gap-2 text-gray-700 text-sm"
+            >
               <Upload className="w-5 h-5" /> Subir doc
-            </button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {documentos.map((doc, idx) => (
-              <div key={idx} className="bg-white rounded shadow p-4 flex flex-col items-center">
-                {icono(doc.tipo)}
-                <div className="mt-2 text-xs font-medium text-gray-700 truncate w-full text-center">
-                  {doc.nombre}
-                </div>
-                <button className="mt-2 text-gray-400 hover:text-gray-600">
-                  <MoreHorizontal className="w-5 h-5" />
-                </button>
-              </div>
+            </motion.button>
+          </motion.div>
+
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="grid grid-cols-1 md:grid-cols-4 gap-6"
+          >
+            {filteredDocumentos.map((doc, idx) => (
+              <motion.div key={idx} variants={itemVariants}>
+                <AnimatedCard className="p-4">
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {icono(doc.tipo)}
+                  </motion.div>
+                  <div className="mt-2 text-xs font-medium text-gray-700 truncate w-full text-center">
+                    {doc.nombre}
+                  </div>
+                  <motion.button
+                    whileHover={{ rotate: 90 }}
+                    transition={{ duration: 0.2 }}
+                    className="mt-2 text-gray-400 hover:text-gray-600 mx-auto block"
+                  >
+                    <MoreHorizontal className="w-5 h-5" />
+                  </motion.button>
+                </AnimatedCard>
+              </motion.div>
             ))}
-          </div>
-          <div className="flex justify-center items-center gap-4 mt-8">
-            <button className="text-gray-500 hover:text-gray-700"><ChevronLeft className="w-5 h-5" /></button>
+          </motion.div>
+
+          {filteredDocumentos.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center text-gray-500 mt-8"
+            >
+              No se encontraron documentos que coincidan con los filtros
+            </motion.div>
+          )}
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="flex justify-center items-center gap-4 mt-8"
+          >
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </motion.button>
             <span className="font-semibold">1</span>
-            <button className="text-gray-500 hover:text-gray-700"><ChevronRight className="w-5 h-5" /></button>
-          </div>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </motion.button>
+          </motion.div>
         </main>
       </div>
     </div>
