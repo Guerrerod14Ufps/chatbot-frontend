@@ -4,22 +4,32 @@ import { Mail, Lock, ArrowRight, GraduationCap, User, Shield } from 'lucide-reac
 import { Link, useNavigate } from 'react-router-dom';
 import { AnimatedCard } from '../components/AnimatedCard';
 import { useAuth } from '../contexts/AuthContext';
+import * as api from '../services/api';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Aquí iría la lógica de autenticación
-    console.log('Login:', { email, password });
-    login('admin');
-    navigate('/usuarios');
+    setLoading(true);
+    setError(null);
+    try {
+      await api.login({ username: email, password });
+      login('admin'); // Por ahora, asume admin. Luego se puede obtener el rol real del perfil.
+      navigate('/usuarios');
+    } catch (err: any) {
+      setError(err.detail || 'Error al iniciar sesión');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Simulación de login por tipo de usuario
+  // Simulación de login por tipo de usuario (demo)
   const handleLoginTipo = (tipo: 'estudiante' | 'profesor' | 'admin') => {
     login(tipo);
     if (tipo === 'admin') {
@@ -109,14 +119,21 @@ export const Login: React.FC = () => {
                 </div>
               </motion.div>
 
+              {error && (
+                <motion.div variants={itemVariants} className="text-red-600 text-sm text-center">
+                  {error}
+                </motion.div>
+              )}
+
               <motion.div variants={itemVariants}>
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   type="submit"
                   className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white py-2 px-4 rounded-lg hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200"
+                  disabled={loading}
                 >
-                  Iniciar Sesión
+                  {loading ? 'Cargando...' : 'Iniciar Sesión'}
                 </motion.button>
               </motion.div>
             </form>
@@ -137,7 +154,7 @@ export const Login: React.FC = () => {
               </Link>
             </motion.div>
 
-            {/* Botones de acceso rápido por tipo de usuario */}
+            {/* Botones de acceso rápido por tipo de usuario (demo) */}
             <motion.div variants={itemVariants} className="flex flex-col gap-2 pt-4">
               <motion.button
                 whileHover={{ scale: 1.03 }}

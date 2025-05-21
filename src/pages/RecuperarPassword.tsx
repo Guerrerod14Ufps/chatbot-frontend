@@ -3,16 +3,26 @@ import { motion } from 'framer-motion';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AnimatedCard } from '../components/AnimatedCard';
+import * as api from '../services/api';
 
 export const RecuperarPassword: React.FC = () => {
   const [email, setEmail] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Aquí iría la lógica de recuperación de contraseña
-    console.log('Email para recuperación:', email);
-    setIsSubmitted(true);
+    setLoading(true);
+    setError(null);
+    try {
+      await api.requestPasswordReset(email);
+      setIsSubmitted(true);
+    } catch (err: any) {
+      setError(err.detail || 'Error al solicitar recuperación');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const containerVariants = {
@@ -81,14 +91,21 @@ export const RecuperarPassword: React.FC = () => {
                   </div>
                 </motion.div>
 
+                {error && (
+                  <motion.div variants={itemVariants} className="text-red-600 text-sm text-center">
+                    {error}
+                  </motion.div>
+                )}
+
                 <motion.div variants={itemVariants}>
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     type="submit"
                     className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white py-2 px-4 rounded-lg hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200"
+                    disabled={loading}
                   >
-                    Enviar Instrucciones
+                    {loading ? 'Enviando...' : 'Enviar Instrucciones'}
                   </motion.button>
                 </motion.div>
               </form>

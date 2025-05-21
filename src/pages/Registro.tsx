@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Mail, Lock, ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { User, Mail, Lock, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { AnimatedCard } from '../components/AnimatedCard';
+import * as api from '../services/api';
 
 export const Registro: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -11,11 +12,30 @@ export const Registro: React.FC = () => {
     password: '',
     confirmPassword: ''
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Aquí iría la lógica de registro
-    console.log('Datos de registro:', formData);
+    setError(null);
+    setLoading(true);
+    setSuccess(false);
+    if (formData.password !== formData.confirmPassword) {
+      setError('Las contraseñas no coinciden');
+      setLoading(false);
+      return;
+    }
+    try {
+      await api.register({ fullname: formData.nombre, email: formData.email, password: formData.password });
+      setSuccess(true);
+      setTimeout(() => navigate('/login'), 2000);
+    } catch (err: any) {
+      setError(err.detail || 'Error al registrar usuario');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const containerVariants = {
@@ -136,14 +156,26 @@ export const Registro: React.FC = () => {
                 </div>
               </motion.div>
 
+              {error && (
+                <motion.div variants={itemVariants} className="text-red-600 text-sm text-center">
+                  {error}
+                </motion.div>
+              )}
+              {success && (
+                <motion.div variants={itemVariants} className="text-green-600 text-sm text-center flex items-center justify-center gap-2">
+                  <CheckCircle className="w-5 h-5" /> ¡Registro exitoso! Redirigiendo...
+                </motion.div>
+              )}
+
               <motion.div variants={itemVariants}>
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   type="submit"
                   className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white py-2 px-4 rounded-lg hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200"
+                  disabled={loading}
                 >
-                  Registrarse
+                  {loading ? 'Registrando...' : 'Registrarse'}
                 </motion.button>
               </motion.div>
             </form>
