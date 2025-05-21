@@ -21,8 +21,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({ onLogout, userName = '
   }, []);
 
   return (
-    <header className="w-full bg-red-600 py-3 px-8 flex items-center justify-between relative">
-      <h2 className="text-white text-lg font-semibold">Usuarios</h2>
+    <header className="w-full bg-red-600 py-3 px-8 flex items-center justify-end relative">
       <div className="relative" ref={ref}>
         <button
           className="bg-white rounded-full p-2 shadow hover:bg-gray-100"
