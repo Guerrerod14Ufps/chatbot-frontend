@@ -113,7 +113,7 @@ export async function getProfile() {
   return await res.json();
 }
 
-export async function getUsers(): Promise<User[]> {
+export async function getUsers(): Promise<[]> {
   const token = localStorage.getItem('token');
   const res = await fetch(`${API_URL}/users/`, {
     headers: { 'Authorization': `Bearer ${token}` }
@@ -362,5 +362,34 @@ export async function deleteFAQ(faqId: number) {
 // Función temporal para probar el endpoint de categorías
 export async function getCategoriesTest() {
   const res = await fetch('https://chatbot-api-production-42f4.up.railway.app/categories/');
+  return await res.json();
+}
+
+// Cambiar foto de perfil
+export async function setUserPhoto(photo: File) {
+  const token = localStorage.getItem('token');
+  const formData = new FormData();
+  formData.append('photo', photo);
+  const res = await fetch(`${API_URL}/users/set-photo`, {
+    method: 'PATCH',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
+    body: formData
+  });
+  if (!res.ok) throw await res.json();
+  return await res.json();
+}
+
+// Eliminar foto de perfil
+export async function unsetUserPhoto() {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${API_URL}/users/unset-photo`, {
+    method: 'PATCH',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!res.ok) throw await res.json();
   return await res.json();
 } 

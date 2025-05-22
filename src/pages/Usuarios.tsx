@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Sidebar } from '../components/Sidebar';
 import { AdminHeader } from '../components/AdminHeader';
-import { Search, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, UserCircle } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { AnimatedCard } from '../components/AnimatedCard';
 import * as api from '../services/api';

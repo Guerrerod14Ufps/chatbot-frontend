@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Sidebar } from '../components/Sidebar';
 import { AdminHeader } from '../components/AdminHeader';
-import { Search, Upload, MoreHorizontal, ChevronLeft, ChevronRight, FileText, File, Trash2, Pencil } from 'lucide-react';
+import { Search, Upload, ChevronLeft, ChevronRight, FileText, File, Trash2, Pencil } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { AnimatedCard } from '../components/AnimatedCard';
 import * as api from '../services/api';
@@ -45,6 +45,7 @@ export const Documentos: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
       setDocumentos(data.filter((r: any) => r.type === 'documento'));
     } catch (err: any) {
       setError(err.detail || err.message || 'Error al cargar documentos');
+      console.log(error);
     } finally {
       setLoading(false);
     }

@@ -96,32 +96,7 @@ export const Login: React.FC = () => {
             <p className="text-gray-600">Inicia sesión para continuar</p>
           </motion.div>
 
-          <motion.div variants={itemVariants} className="mb-6 flex flex-col gap-2">
-            <button
-              type="button"
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-red-100 text-gray-700 transition-colors"
-              onClick={() => handleDirectLogin('admin')}
-              disabled={loading}
-            >
-              <Shield className="w-4 h-4 text-red-600" /> Ingresar como Admin
-            </button>
-            <button
-              type="button"
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-red-100 text-gray-700 transition-colors"
-              onClick={() => handleDirectLogin('docente')}
-              disabled={loading}
-            >
-              <GraduationCap className="w-4 h-4 text-red-600" /> Ingresar como Docente
-            </button>
-            <button
-              type="button"
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-red-100 text-gray-700 transition-colors"
-              onClick={() => handleDirectLogin('estudiante')}
-              disabled={loading}
-            >
-              <User className="w-4 h-4 text-red-600" /> Ingresar como Estudiante
-            </button>
-          </motion.div>
+          
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <motion.div variants={itemVariants}>
