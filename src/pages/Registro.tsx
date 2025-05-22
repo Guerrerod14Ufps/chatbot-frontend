@@ -1,36 +1,33 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Mail, Lock, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Mail, Lock, User, ArrowLeft } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AnimatedCard } from '../components/AnimatedCard';
 import * as api from '../services/api';
 
 export const Registro: React.FC = () => {
-  const [formData, setFormData] = useState({
-    nombre: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  });
+  const [fullname, setFullname] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setLoading(true);
-    setSuccess(false);
-    if (formData.password !== formData.confirmPassword) {
+    if (password !== confirmPassword) {
       setError('Las contraseñas no coinciden');
-      setLoading(false);
       return;
     }
+
+    setLoading(true);
+    setError(null);
     try {
-      await api.register({ fullname: formData.nombre, email: formData.email, password: formData.password });
-      setSuccess(true);
-      setTimeout(() => navigate('/login'), 2000);
+      await api.register({ fullname, email, password });
+      navigate('/login', { 
+        state: { message: 'Registro exitoso. Por favor inicia sesión.' }
+      });
     } catch (err: any) {
       setError(err.detail || 'Error al registrar usuario');
     } finally {
@@ -60,135 +57,124 @@ export const Registro: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center p-4">
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
         className="w-full max-w-md"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
       >
-        <AnimatedCard className="p-8">
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="space-y-6"
-          >
-            <motion.div variants={itemVariants} className="text-center">
-              <h2 className="text-2xl font-bold text-gray-800">Crear Cuenta</h2>
-              <p className="text-gray-600 mt-2">Ingresa tus datos para registrarte</p>
+        <AnimatedCard className="bg-white rounded-xl shadow-xl p-8">
+          <motion.div variants={itemVariants} className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-red-600 mb-2">Crear Cuenta</h1>
+            <p className="text-gray-600">Regístrate para comenzar</p>
+          </motion.div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <motion.div variants={itemVariants}>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nombre Completo
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={fullname}
+                  onChange={(e) => setFullname(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  placeholder="Tu nombre completo"
+                  required
+                />
+              </div>
             </motion.div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <motion.div variants={itemVariants}>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nombre Completo
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    placeholder="Tu nombre"
-                    value={formData.nombre}
-                    onChange={(e) => setFormData({...formData, nombre: e.target.value})}
-                    required
-                  />
-                </div>
-              </motion.div>
+            <motion.div variants={itemVariants}>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Correo Electrónico
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  placeholder="tu@email.com"
+                  required
+                />
+              </div>
+            </motion.div>
 
-              <motion.div variants={itemVariants}>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Correo Electrónico
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="email"
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    placeholder="tu@email.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    required
-                  />
-                </div>
-              </motion.div>
+            <motion.div variants={itemVariants}>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Contraseña
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  placeholder="••••••••"
+                  required
+                  minLength={6}
+                />
+              </div>
+            </motion.div>
 
-              <motion.div variants={itemVariants}>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contraseña
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="password"
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    required
-                  />
-                </div>
-              </motion.div>
+            <motion.div variants={itemVariants}>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Confirmar Contraseña
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  placeholder="••••••••"
+                  required
+                  minLength={6}
+                />
+              </div>
+            </motion.div>
 
-              <motion.div variants={itemVariants}>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirmar Contraseña
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="password"
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    placeholder="••••••••"
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-                    required
-                  />
-                </div>
-              </motion.div>
-
-              {error && (
-                <motion.div variants={itemVariants} className="text-red-600 text-sm text-center">
-                  {error}
-                </motion.div>
-              )}
-              {success && (
-                <motion.div variants={itemVariants} className="text-green-600 text-sm text-center flex items-center justify-center gap-2">
-                  <CheckCircle className="w-5 h-5" /> ¡Registro exitoso! Redirigiendo...
-                </motion.div>
-              )}
-
-              <motion.div variants={itemVariants}>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white py-2 px-4 rounded-lg hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200"
-                  disabled={loading}
-                >
-                  {loading ? 'Registrando...' : 'Registrarse'}
-                </motion.button>
-              </motion.div>
-            </form>
-
-            <motion.div variants={itemVariants} className="text-center">
-              <Link 
-                to="/login" 
-                className="inline-flex items-center text-sm text-gray-600 hover:text-red-600"
+            {error && (
+              <motion.div
+                variants={itemVariants}
+                className="text-red-500 text-sm text-center"
               >
-                <ArrowLeft className="w-4 h-4 mr-1" />
-                Volver al inicio de sesión
-              </Link>
+                {error}
+              </motion.div>
+            )}
+
+            <motion.div variants={itemVariants}>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50"
+              >
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <span>Registrarse</span>
+                    <ArrowLeft className="w-4 h-4" />
+                  </>
+                )}
+              </button>
             </motion.div>
+          </form>
+
+          <motion.div variants={itemVariants} className="mt-6 text-center">
+            <Link
+              to="/login"
+              className="text-sm text-red-600 hover:text-red-700"
+            >
+              ¿Ya tienes una cuenta? Inicia sesión
+            </Link>
           </motion.div>
         </AnimatedCard>
       </motion.div>

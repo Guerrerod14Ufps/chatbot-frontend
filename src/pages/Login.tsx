@@ -19,23 +19,20 @@ export const Login: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      await api.login({ username: email, password });
-      login('admin'); // Por ahora, asume admin. Luego se puede obtener el rol real del perfil.
-      navigate('/usuarios');
+      const response = await api.login({ username: email, password });
+      const profile = await api.getProfile();
+      login(profile.role as 'admin' | 'docente' | 'estudiante');
+      
+      // Redirigir según el rol
+      if (profile.role === 'admin') {
+        navigate('/usuarios');
+      } else {
+        navigate('/chatbot');
+      }
     } catch (err: any) {
       setError(err.detail || 'Error al iniciar sesión');
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Simulación de login por tipo de usuario (demo)
-  const handleLoginTipo = (tipo: 'estudiante' | 'profesor' | 'admin') => {
-    login(tipo);
-    if (tipo === 'admin') {
-      navigate('/usuarios');
-    } else {
-      navigate('/chatbot');
     }
   };
 
@@ -61,129 +58,134 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center p-4">
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
         className="w-full max-w-md"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
       >
-        <AnimatedCard className="p-8">
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="space-y-6"
-          >
-            <motion.div variants={itemVariants} className="text-center">
-              <h2 className="text-2xl font-bold text-gray-800">Iniciar Sesión</h2>
-              <p className="text-gray-600 mt-2">Ingresa tus credenciales para continuar</p>
+        <AnimatedCard className="bg-white rounded-xl shadow-xl p-8">
+          <motion.div variants={itemVariants} className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-red-600 mb-2">Bienvenido</h1>
+            <p className="text-gray-600">Inicia sesión para continuar</p>
+          </motion.div>
+
+          <motion.div variants={itemVariants} className="mb-6 flex flex-col gap-2">
+            <button
+              type="button"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-red-100 text-gray-700 transition-colors"
+              onClick={() => { setEmail('admin@email.com'); setPassword('password123'); }}
+            >
+              <Shield className="w-4 h-4 text-red-600" /> Ingresar como Admin
+            </button>
+            <button
+              type="button"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-red-100 text-gray-700 transition-colors"
+              onClick={() => { setEmail('docente@email.com'); setPassword('password123'); }}
+            >
+              <GraduationCap className="w-4 h-4 text-red-600" /> Ingresar como Docente
+            </button>
+            <button
+              type="button"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-red-100 text-gray-700 transition-colors"
+              onClick={() => { setEmail('estudiante@email.com'); setPassword('password123'); }}
+            >
+              <User className="w-4 h-4 text-red-600" /> Ingresar como Estudiante
+            </button>
+          </motion.div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <motion.div variants={itemVariants}>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Correo Electrónico
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  placeholder="tu@email.com"
+                  required
+                />
+              </div>
             </motion.div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <motion.div variants={itemVariants}>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Correo Electrónico
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="email"
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    placeholder="tu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-              </motion.div>
+            <motion.div variants={itemVariants}>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Contraseña
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+            </motion.div>
 
-              <motion.div variants={itemVariants}>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contraseña
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="password"
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-              </motion.div>
-
-              {error && (
-                <motion.div variants={itemVariants} className="text-red-600 text-sm text-center">
-                  {error}
-                </motion.div>
-              )}
-
-              <motion.div variants={itemVariants}>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white py-2 px-4 rounded-lg hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200"
-                  disabled={loading}
-                >
-                  {loading ? 'Cargando...' : 'Iniciar Sesión'}
-                </motion.button>
-              </motion.div>
-            </form>
-
-            <motion.div variants={itemVariants} className="flex flex-col items-center gap-2">
-              <Link 
-                to="/recuperar-password" 
-                className="text-sm text-gray-600 hover:text-red-600"
+            {error && (
+              <motion.div
+                variants={itemVariants}
+                className="text-red-500 text-sm text-center"
               >
-                ¿Olvidaste tu contraseña?
+                {error}
+              </motion.div>
+            )}
+
+            <motion.div variants={itemVariants}>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50"
+              >
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <span>Iniciar Sesión</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </motion.div>
+          </form>
+
+          <motion.div variants={itemVariants} className="mt-6 text-center">
+            <Link
+              to="/recuperar-password"
+              className="text-sm text-red-600 hover:text-red-700"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </motion.div>
+
+          <motion.div variants={itemVariants} className="mt-8">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">
+                  ¿No tienes una cuenta?
+                </span>
+              </div>
+            </div>
+            <div className="mt-6">
+              <Link
+                to="/registro"
+                className="w-full bg-white border border-red-600 text-red-600 py-2 px-4 rounded-lg hover:bg-red-50 transition-colors flex items-center justify-center space-x-2"
+              >
+                <span>Crear cuenta</span>
+                <User className="w-4 h-4" />
               </Link>
-              <Link 
-                to="/registro" 
-                className="inline-flex items-center text-sm text-gray-600 hover:text-red-600"
-              >
-                Crear una cuenta
-                <ArrowRight className="w-4 h-4 ml-1" />
-              </Link>
-            </motion.div>
-
-            {/* Botones de acceso rápido por tipo de usuario (demo) */}
-            <motion.div variants={itemVariants} className="flex flex-col gap-2 pt-4">
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-400 to-red-500 text-white py-2 px-4 rounded-lg shadow hover:from-red-500 hover:to-red-600 transition-all"
-                onClick={() => handleLoginTipo('estudiante')}
-                type="button"
-              >
-                <GraduationCap className="w-5 h-5" /> Entrar como Estudiante
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-400 to-red-500 text-white py-2 px-4 rounded-lg shadow hover:from-red-500 hover:to-red-600 transition-all"
-                onClick={() => handleLoginTipo('profesor')}
-                type="button"
-              >
-                <User className="w-5 h-5" /> Entrar como Profesor
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-gray-700 to-gray-900 text-white py-2 px-4 rounded-lg shadow hover:from-gray-800 hover:to-black transition-all"
-                onClick={() => handleLoginTipo('admin')}
-                type="button"
-              >
-                <Shield className="w-5 h-5" /> Entrar como Admin
-              </motion.button>
-            </motion.div>
+            </div>
           </motion.div>
         </AnimatedCard>
       </motion.div>

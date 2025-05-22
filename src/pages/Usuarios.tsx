@@ -5,6 +5,8 @@ import { Search, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, UserCircle } f
 import { motion } from 'framer-motion';
 import { AnimatedCard } from '../components/AnimatedCard';
 import * as api from '../services/api';
+import { Dialog } from '@headlessui/react';
+import type { UserRole } from '../services/api';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -34,6 +36,17 @@ export const Usuarios: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [newUser, setNewUser] = useState({
+    fullname: '',
+    email: '',
+    password: '',
+    role: 'estudiante' as UserRole,
+    is_active: true,
+  });
 
   useEffect(() => {
     api.getUsers()
@@ -50,6 +63,25 @@ export const Usuarios: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
       return matchesSearch && matchesRol && matchesEstado;
     });
   }, [searchTerm, selectedRol, selectedEstado, usuarios]);
+
+  const handleCreateUser = async () => {
+    setCreateLoading(true);
+    setCreateError(null);
+    try {
+      await api.createUserByAdmin(newUser);
+      setShowCreateModal(false);
+      setShowConfirm(false);
+      setNewUser({ fullname: '', email: '', password: '', role: 'estudiante' as UserRole, is_active: true });
+      // Recargar usuarios
+      setLoading(true);
+      const users = await api.getUsers();
+      setUsuarios(users);
+    } catch (err: any) {
+      setCreateError(err.detail || 'Error al crear usuario');
+    } finally {
+      setCreateLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex">
@@ -98,6 +130,7 @@ export const Usuarios: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="bg-white rounded-full px-4 py-2 shadow-lg hover:shadow-xl transition-shadow duration-300 flex items-center gap-2 text-gray-700 text-sm"
+              onClick={() => setShowCreateModal(true)}
             >
               <Plus className="w-5 h-5" /> Crear usuario
             </motion.button>
@@ -203,6 +236,105 @@ export const Usuarios: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
           </motion.div>
         </main>
       </div>
+
+      {/* Modal de creación de usuario */}
+      <Dialog open={showCreateModal} onClose={() => setShowCreateModal(false)} className="fixed z-50 inset-0 overflow-y-auto">
+        <div className="flex items-center justify-center min-h-screen px-4">
+          <div className="fixed inset-0 bg-black bg-opacity-30" />
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="relative bg-white rounded-xl shadow-xl p-8 w-full max-w-md z-10"
+          >
+            <Dialog.Title className="text-xl font-bold text-red-600 mb-4">Crear nuevo usuario</Dialog.Title>
+            <form className="space-y-4" onSubmit={e => { e.preventDefault(); setShowConfirm(true); }}>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
+                <input
+                  type="text"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"
+                  value={newUser.fullname}
+                  onChange={e => setNewUser({ ...newUser, fullname: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
+                <input
+                  type="email"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"
+                  value={newUser.email}
+                  onChange={e => setNewUser({ ...newUser, email: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                <input
+                  type="password"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"
+                  value={newUser.password}
+                  onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                  required
+                  minLength={6}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
+                <select
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"
+                  value={newUser.role}
+                  onChange={e => setNewUser({ ...newUser, role: e.target.value as UserRole })}
+                  required
+                >
+                  <option value="estudiante">Estudiante</option>
+                  <option value="docente">Profesor</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                <select
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"
+                  value={newUser.is_active ? 'activo' : 'inactivo'}
+                  onChange={e => setNewUser({ ...newUser, is_active: e.target.value === 'activo' })}
+                >
+                  <option value="activo">Activo</option>
+                  <option value="inactivo">Inactivo</option>
+                </select>
+              </div>
+              {createError && <div className="text-red-500 text-sm text-center">{createError}</div>}
+              <div className="flex justify-end gap-2 mt-4">
+                <button type="button" className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200" onClick={() => setShowCreateModal(false)}>Cancelar</button>
+                <button type="submit" className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50" disabled={createLoading}>
+                  {createLoading ? 'Creando...' : 'Crear'}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      </Dialog>
+
+      {/* Confirmación antes de crear */}
+      <Dialog open={showConfirm} onClose={() => setShowConfirm(false)} className="fixed z-50 inset-0 overflow-y-auto">
+        <div className="flex items-center justify-center min-h-screen px-4">
+          <div className="fixed inset-0 bg-black bg-opacity-30" />
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="relative bg-white rounded-xl shadow-xl p-8 w-full max-w-sm z-10"
+          >
+            <Dialog.Title className="text-lg font-bold text-red-600 mb-4">Confirmar creación</Dialog.Title>
+            <div className="mb-6 text-gray-700">¿Estás seguro de que deseas crear este usuario?</div>
+            <div className="flex justify-end gap-2">
+              <button className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200" onClick={() => setShowConfirm(false)}>Cancelar</button>
+              <button className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50" onClick={handleCreateUser} disabled={createLoading}>
+                {createLoading ? 'Creando...' : 'Confirmar'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      </Dialog>
     </div>
   );
 }; 
