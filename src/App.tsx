@@ -11,6 +11,8 @@ import { Estadisticas } from './pages/Estadisticas';
 import { Chatbot } from './pages/Chatbot';
 import { Categorias } from './pages/Categorias';
 import { useAuth } from './contexts/AuthContext';
+import ResetPasswordConfirm from './pages/ResetPasswordConfirm';
+import VerifyEmail from './pages/VerifyEmail';
 
 function ProtectedRoute({ children, isAuthenticated }: { children: React.ReactNode, isAuthenticated: boolean }) {
   if (!isAuthenticated) {
@@ -84,6 +86,8 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/users/reset-password-confirm" element={<ResetPasswordConfirm />} />
+        <Route path="/users/verify-email" element={<VerifyEmail />} />
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>

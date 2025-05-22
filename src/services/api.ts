@@ -392,4 +392,30 @@ export async function unsetUserPhoto() {
   });
   if (!res.ok) throw await res.json();
   return await res.json();
+}
+
+export async function resetPassword(email: string): Promise<string> {
+  const res = await fetch(`${API_URL}/users/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  });
+  if (!res.ok) throw await res.json();
+  return await res.json();
+}
+
+export async function confirmResetPassword(token: string, password: string, confirmPassword: string): Promise<string> {
+  const res = await fetch(`${API_URL}/users/reset-password-confirm?token=${encodeURIComponent(token)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password, confirm_password: confirmPassword })
+  });
+  if (!res.ok) throw await res.json();
+  return await res.json();
+}
+
+export async function verifyEmail(token: string): Promise<string> {
+  const res = await fetch(`${API_URL}/users/verify-email?token=${encodeURIComponent(token)}`);
+  if (!res.ok) throw await res.json();
+  return await res.json();
 } 

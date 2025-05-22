@@ -16,7 +16,7 @@ export const RecuperarPassword: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      await api.requestPasswordReset("0",email,"0");
+      await api.resetPassword(email);
       setIsSubmitted(true);
     } catch (err: any) {
       setError(err.detail || 'Error al solicitar recuperación');
