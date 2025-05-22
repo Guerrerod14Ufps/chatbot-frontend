@@ -1,4 +1,4 @@
-const API_URL = 'https://chatbot-api-ayd.up.railway.app';
+const API_URL = 'https://chatbot-api-alpha.vercel.app/';
 
 export async function login({ username, password }: { username: string; password: string }) {
   const res = await fetch(`${API_URL}/auth/login`, {
