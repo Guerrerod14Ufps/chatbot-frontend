@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, ArrowRight, GraduationCap, User, Shield } from 'lucide-react';
+import { Mail, Lock, ArrowRight, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AnimatedCard } from '../components/AnimatedCard';
 import { useAuth } from '../contexts/AuthContext';
@@ -37,29 +37,7 @@ export const Login: React.FC = () => {
     }
   };
 
-  // Función para login directo
-  const handleDirectLogin = async (role: 'admin' | 'docente' | 'estudiante') => {
-    setLoading(true);
-    setError(null);
-    let credentials = { username: '', password: 'password123' };
-    if (role === 'admin') credentials.username = 'admin@email.com';
-    if (role === 'docente') credentials.username = 'docente@email.com';
-    if (role === 'estudiante') credentials.username = 'estudiante@email.com';
-    try {
-      await api.login(credentials);
-      const profile = await api.getProfile();
-      login(profile.role as 'admin' | 'docente' | 'estudiante');
-      if (profile.role === 'admin') {
-        navigate('/usuarios');
-      } else {
-        navigate('/chatbot');
-      }
-    } catch (err: any) {
-      setError(err.detail || 'Error al iniciar sesión');
-    } finally {
-      setLoading(false);
-    }
-  };
+  
 
   const containerVariants = {
     hidden: { opacity: 0 },

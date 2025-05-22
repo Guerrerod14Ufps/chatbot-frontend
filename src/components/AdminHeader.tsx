@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { UserCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { setUserPhoto, unsetUserPhoto, getProfile } from '../services/api';
+import { setUserPhoto, unsetUserPhoto} from '../services/api';
 
 const ROL_LABELS: Record<string, string> = {
   admin: 'Administrador',
@@ -38,18 +38,11 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({ onLogout }) => {
 
   const updatePhotoInContext = async () => {
     try {
-      const profile = await getProfile();
-      // Actualiza el contexto manualmente si es necesario
       window.location.reload(); // Solución rápida, idealmente usar contexto
     } catch {}
   };
 
-  const handlePhotoClick = () => {
-    if (!uploading && fileInputRef.current) {
-      fileInputRef.current.value = '';
-      fileInputRef.current.click();
-    }
-  };
+  
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
