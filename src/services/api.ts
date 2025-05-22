@@ -1,4 +1,4 @@
-const API_URL = 'https://chatbot-api-git-main-anderssoncardenas-projects.vercel.app';
+const API_URL = 'https://chatbot-api-production-42f4.up.railway.app';
 
 // Tipos
 export type UserRole = 'estudiante' | 'docente' | 'admin';
@@ -10,6 +10,7 @@ interface UserCreate {
   email: string;
   password: string;
 }
+
 
 interface UserCreateByAdmin extends UserCreate {
   role: UserRole;
@@ -112,13 +113,28 @@ export async function getProfile() {
   return await res.json();
 }
 
-export async function getUsers() {
+export async function getUsers(): Promise<User[]> {
   const token = localStorage.getItem('token');
   const res = await fetch(`${API_URL}/users/`, {
     headers: { 'Authorization': `Bearer ${token}` }
   });
+  
   if (!res.ok) throw await res.json();
-  return await res.json();
+  
+  const data = await res.json();
+  
+  // Transforma los datos de la API para que coincidan con la interfaz User
+  return data.map((user: any) => ({
+    id: user.id,
+    fullname: user.fullname,
+    email: user.email,
+    role: user.role || 'estudiante', // Valor por defecto si no viene
+    photo: user.photo,
+    is_active: user.is_active !== undefined ? user.is_active : true, // Valor por defecto
+    is_verified: user.is_verified || false, // Valor por defecto
+    created_at: user.created_at || new Date().toISOString(),
+    updated_at: user.updated_at || new Date().toISOString()
+  }));
 }
 
 export async function updateProfile(userData: UserUpdate) {
@@ -302,6 +318,7 @@ export async function getFAQs() {
     headers: { 'Authorization': `Bearer ${token}` }
   });
   if (!res.ok) throw await res.json();
+  console.log(res.json());
   return await res.json();
 }
 
@@ -340,5 +357,11 @@ export async function deleteFAQ(faqId: number) {
     headers: { 'Authorization': `Bearer ${token}` }
   });
   if (!res.ok) throw await res.json();
+  return await res.json();
+}
+
+// Función temporal para probar el endpoint de categorías
+export async function getCategoriesTest() {
+  const res = await fetch('https://chatbot-api-production-42f4.up.railway.app/categories/');
   return await res.json();
 } 

@@ -8,6 +8,19 @@ import * as api from '../services/api';
 import { Dialog } from '@headlessui/react';
 import type { UserRole } from '../services/api';
 
+// Definir la interfaz User según la respuesta de la API
+interface User {
+  id: number;
+  fullname: string;
+  email: string;
+  role: string;
+  photo?: string;
+  is_active: boolean;
+  is_verified: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -19,7 +32,7 @@ const containerVariants = {
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 1, y: 20 },
   visible: {
     opacity: 1,
     y: 0,
@@ -33,32 +46,64 @@ export const Usuarios: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRol, setSelectedRol] = useState('');
   const [selectedEstado, setSelectedEstado] = useState('');
-  const [usuarios, setUsuarios] = useState<any[]>([]);
+  const [usuarios, setUsuarios] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [newUser, setNewUser] = useState({
+  const [newUser, setNewUser] = useState<{
+    fullname: string;
+    email: string;
+    password: string;
+    role: UserRole;
+  }>({
     fullname: '',
     email: '',
     password: '',
-    role: 'estudiante' as UserRole,
-    is_active: true,
+    role: 'estudiante',
   });
+  const [editUser, setEditUser] = useState<User | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editRole, setEditRole] = useState<UserRole>('estudiante');
+  const [editActive, setEditActive] = useState(true);
+  const [editLoading, setEditLoading] = useState(false);
+  const [deleteUserId, setDeleteUserId] = useState<number | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
+    setLoading(true);
+    setError(null);
+    
     api.getUsers()
-      .then(setUsuarios)
-      .catch((err) => setError(err.detail || 'Error al cargar usuarios'))
+      .then(users => {
+        // Verifica que users sea un array
+        if (Array.isArray(users)) {
+          setUsuarios(users);
+        } else {
+          // Si no es un array, intenta convertirlo o maneja el error
+          setError('Formato de datos inesperado');
+          console.error('La API no devolvió un array:', users);
+        }
+      })
+      .catch((err) => {
+        const errorMessage = err.detail || err.message || 'Error al cargar usuarios';
+        setError(errorMessage);
+        console.error('Error al cargar usuarios:', err);
+      })
       .finally(() => setLoading(false));
+      
+  }, []);
+
+  useEffect(() => {
+    api.getFAQs().then(data => console.log('Recursos:', data));
   }, []);
 
   const filteredUsuarios = useMemo(() => {
     return usuarios.filter(usuario => {
       const matchesSearch = usuario.fullname?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesRol = !selectedRol || usuario.role === selectedRol;
+      const matchesRol = !selectedRol || usuario.role?.toLowerCase() === selectedRol.toLowerCase();
       const matchesEstado = !selectedEstado || (usuario.is_active ? 'ACTIVO' : 'INACTIVO') === selectedEstado;
       return matchesSearch && matchesRol && matchesEstado;
     });
@@ -68,18 +113,67 @@ export const Usuarios: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
     setCreateLoading(true);
     setCreateError(null);
     try {
-      await api.createUserByAdmin(newUser);
+      const { fullname, email, password, role } = newUser;
+      await api.createUserByAdmin({ fullname, email, password, role });
       setShowCreateModal(false);
       setShowConfirm(false);
-      setNewUser({ fullname: '', email: '', password: '', role: 'estudiante' as UserRole, is_active: true });
+      setNewUser({ fullname: '', email: '', password: '', role: 'estudiante' });
       // Recargar usuarios
       setLoading(true);
       const users = await api.getUsers();
       setUsuarios(users);
+      window.location.reload();
     } catch (err: any) {
       setCreateError(err.detail || 'Error al crear usuario');
     } finally {
       setCreateLoading(false);
+    }
+  };
+
+  const handleOpenEdit = (user: User) => {
+    setEditUser(user);
+    setEditRole(user.role as UserRole);
+    setEditActive(user.is_active);
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editUser) return;
+    setEditLoading(true);
+    try {
+      if (editUser.role !== editRole) {
+        await api.updateUserRole(editUser.id, { role: editRole });
+      }
+      if (editUser.is_active !== editActive) {
+        await api.updateUserStatus(editUser.id, { is_active: editActive });
+      }
+      setShowEditModal(false);
+      setEditUser(null);
+      setLoading(true);
+      const users = await api.getUsers();
+      setUsuarios(users);
+      window.location.reload();
+    } catch (err: any) {
+      alert('Error al actualizar usuario');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deleteUserId) return;
+    setDeleteLoading(true);
+    try {
+      await api.deleteUser(deleteUserId);
+      setDeleteUserId(null);
+      setLoading(true);
+      const users = await api.getUsers();
+      setUsuarios(users);
+      window.location.reload();
+    } catch (err: any) {
+      alert('Error al eliminar usuario');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -140,7 +234,7 @@ export const Usuarios: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center text-gray-500 mt-8">
               Cargando usuarios...
             </motion.div>
-          ) : error ? (
+          ) : usuarios.length === 0 && error ? (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center text-red-600 mt-8">
               {error}
             </motion.div>
@@ -161,12 +255,13 @@ export const Usuarios: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
                       >
                         <div className="absolute inset-0 bg-gradient-to-br from-red-500 to-red-600 rounded-full shadow-lg" />
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <UserCircle className="w-8 h-8 text-white" />
+                          <span className="text-white font-bold text-lg">{usuario.fullname.charAt(0)}</span>
                         </div>
                       </motion.div>
                       <div>
                         <h3 className="font-semibold text-gray-800">{usuario.fullname}</h3>
-                        <p className="text-sm text-gray-600">{usuario.role}</p>
+                        <p className="text-sm text-gray-600">{usuario.email}</p>
+                        <p className="text-xs text-gray-500">Rol: {usuario.role}</p>
                       </div>
                     </div>
                     <div className="mt-4 flex items-center justify-between">
@@ -184,6 +279,7 @@ export const Usuarios: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
                           whileHover={{ scale: 1.1, rotate: 5 }}
                           whileTap={{ scale: 0.9 }}
                           className="text-gray-400 hover:text-red-600"
+                          onClick={() => handleOpenEdit(usuario)}
                         >
                           <Pencil className="w-4 h-4" />
                         </motion.button>
@@ -191,6 +287,7 @@ export const Usuarios: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
                           whileHover={{ scale: 1.1, rotate: -5 }}
                           whileTap={{ scale: 0.9 }}
                           className="text-gray-400 hover:text-red-600"
+                          onClick={() => setDeleteUserId(usuario.id)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </motion.button>
@@ -202,7 +299,8 @@ export const Usuarios: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
             </motion.div>
           )}
 
-          {filteredUsuarios.length === 0 && !loading && !error && (
+          {/* Mensaje si hay usuarios pero ningún resultado por los filtros */}
+          {filteredUsuarios.length === 0 && usuarios.length > 0 && !loading && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -292,17 +390,6 @@ export const Usuarios: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
                   <option value="admin">Admin</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-                <select
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"
-                  value={newUser.is_active ? 'activo' : 'inactivo'}
-                  onChange={e => setNewUser({ ...newUser, is_active: e.target.value === 'activo' })}
-                >
-                  <option value="activo">Activo</option>
-                  <option value="inactivo">Inactivo</option>
-                </select>
-              </div>
               {createError && <div className="text-red-500 text-sm text-center">{createError}</div>}
               <div className="flex justify-end gap-2 mt-4">
                 <button type="button" className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200" onClick={() => setShowCreateModal(false)}>Cancelar</button>
@@ -330,6 +417,73 @@ export const Usuarios: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
               <button className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200" onClick={() => setShowConfirm(false)}>Cancelar</button>
               <button className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50" onClick={handleCreateUser} disabled={createLoading}>
                 {createLoading ? 'Creando...' : 'Confirmar'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      </Dialog>
+
+      {/* Modal de edición de usuario */}
+      <Dialog open={showEditModal} onClose={() => setShowEditModal(false)} className="fixed z-50 inset-0 overflow-y-auto">
+        <div className="flex items-center justify-center min-h-screen px-4">
+          <div className="fixed inset-0 bg-black bg-opacity-30" />
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="relative bg-white rounded-xl shadow-xl p-8 w-full max-w-md z-10"
+          >
+            <Dialog.Title className="text-xl font-bold text-red-600 mb-4">Editar usuario</Dialog.Title>
+            <form className="space-y-4" onSubmit={e => { e.preventDefault(); handleSaveEdit(); }}>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
+                <select
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"
+                  value={editRole}
+                  onChange={e => setEditRole(e.target.value as UserRole)}
+                  required
+                >
+                  <option value="estudiante">Estudiante</option>
+                  <option value="docente">Profesor</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                <select
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"
+                  value={editActive ? 'activo' : 'inactivo'}
+                  onChange={e => setEditActive(e.target.value === 'activo')}
+                >
+                  <option value="activo">Activo</option>
+                  <option value="inactivo">Inactivo</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-2 mt-4">
+                <button type="button" className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200" onClick={() => setShowEditModal(false)}>Cancelar</button>
+                <button type="submit" className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50" disabled={editLoading}>
+                  {editLoading ? 'Guardando...' : 'Guardar'}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      </Dialog>
+
+      {/* Modal de confirmación de eliminación */}
+      <Dialog open={!!deleteUserId} onClose={() => setDeleteUserId(null)} className="fixed z-50 inset-0 overflow-y-auto">
+        <div className="flex items-center justify-center min-h-screen px-4">
+          <div className="fixed inset-0 bg-black bg-opacity-30" />
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="relative bg-white rounded-xl shadow-xl p-8 w-full max-w-sm z-10"
+          >
+            <Dialog.Title className="text-lg font-bold text-red-600 mb-4">Eliminar usuario</Dialog.Title>
+            <div className="mb-6 text-gray-700">¿Estás seguro de que deseas eliminar este usuario?</div>
+            <div className="flex justify-end gap-2">
+              <button className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200" onClick={() => setDeleteUserId(null)}>Cancelar</button>
+              <button className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50" onClick={handleDeleteUser} disabled={deleteLoading}>
+                {deleteLoading ? 'Eliminando...' : 'Eliminar'}
               </button>
             </div>
           </motion.div>

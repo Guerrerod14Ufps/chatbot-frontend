@@ -9,6 +9,7 @@ import { RecursosRA } from './pages/RecursosRA';
 import { PreguntasFrecuentes } from './pages/PreguntasFrecuentes';
 import { Estadisticas } from './pages/Estadisticas';
 import { Chatbot } from './pages/Chatbot';
+import { Categorias } from './pages/Categorias';
 import { useAuth } from './contexts/AuthContext';
 
 function ProtectedRoute({ children, isAuthenticated }: { children: React.ReactNode, isAuthenticated: boolean }) {
@@ -72,6 +73,14 @@ function App() {
           element={
             <ProtectedRoute isAuthenticated={isAuthenticated}>
               <Estadisticas />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/categorias"
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <Categorias />
             </ProtectedRoute>
           }
         />

@@ -15,6 +15,7 @@ export const Sidebar: React.FC<SidebarProps> = ({  }) => {
   // Opciones según el rol
   const menuItems = [
     { path: '/usuarios', icon: Users, label: 'Usuarios', roles: ['admin'] },
+    { path: '/categorias', icon: Box, label: 'Categorías', roles: ['admin'] },
     { path: '/documentos', icon: FileText, label: 'Documentos', roles: ['admin'] },
     { path: '/recursos-ra', icon: Box, label: 'Recursos RA', roles: ['admin', 'profesor', 'estudiante'] },
     { path: '/chatbot', icon: MessageCircle, label: 'Chatbot', roles: ['admin', 'profesor', 'estudiante'] },
