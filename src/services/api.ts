@@ -318,7 +318,6 @@ export async function getFAQs() {
     headers: { 'Authorization': `Bearer ${token}` }
   });
   if (!res.ok) throw await res.json();
-  console.log(res.json());
   return await res.json();
 }
 

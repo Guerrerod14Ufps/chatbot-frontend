@@ -24,6 +24,7 @@ export const Documentos: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [showUpload, setShowUpload] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<number | ''>('');
   const [uploadDesc, setUploadDesc] = useState('');
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadLoading, setUploadLoading] = useState(false);
@@ -61,9 +62,10 @@ export const Documentos: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
     return documentos.filter(doc => {
       const matchesSearch = doc.description.toLowerCase().includes(searchTerm.toLowerCase()) || (doc.name?.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesType = !selectedType || (doc.name && doc.name.toLowerCase().endsWith(selectedType));
-      return matchesSearch && matchesType;
+      const matchesCategory = !selectedCategory || doc.category_id === selectedCategory;
+      return matchesSearch && matchesType && matchesCategory;
     });
-  }, [searchTerm, selectedType, documentos]);
+  }, [searchTerm, selectedType, selectedCategory, documentos]);
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -180,6 +182,17 @@ export const Documentos: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
               <option value=".pdf">PDF</option>
               <option value=".doc">DOC</option>
               <option value=".docx">DOCX</option>
+            </motion.select>
+            <motion.select
+              whileHover={{ scale: 1.02 }}
+              className="bg-white rounded-full px-4 py-2 shadow-lg hover:shadow-xl transition-shadow duration-300 text-gray-700 text-sm"
+              value={selectedCategory}
+              onChange={e => setSelectedCategory(e.target.value === '' ? '' : Number(e.target.value))}
+            >
+              <option value="">Todas las categorías</option>
+              {categorias.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
             </motion.select>
             <motion.button
               whileHover={{ scale: 1.05 }}
