@@ -20,10 +20,35 @@ export const Login: React.FC = () => {
     setError(null);
     try {
       const response = await api.login({ username: email, password });
+      console.log(response);
       const profile = await api.getProfile();
       login(profile.role as 'admin' | 'docente' | 'estudiante');
       
       // Redirigir según el rol
+      if (profile.role === 'admin') {
+        navigate('/usuarios');
+      } else {
+        navigate('/chatbot');
+      }
+    } catch (err: any) {
+      setError(err.detail || 'Error al iniciar sesión');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Función para login directo
+  const handleDirectLogin = async (role: 'admin' | 'docente' | 'estudiante') => {
+    setLoading(true);
+    setError(null);
+    let credentials = { username: '', password: 'password123' };
+    if (role === 'admin') credentials.username = 'admin@email.com';
+    if (role === 'docente') credentials.username = 'docente@email.com';
+    if (role === 'estudiante') credentials.username = 'estudiante@email.com';
+    try {
+      await api.login(credentials);
+      const profile = await api.getProfile();
+      login(profile.role as 'admin' | 'docente' | 'estudiante');
       if (profile.role === 'admin') {
         navigate('/usuarios');
       } else {
@@ -75,21 +100,24 @@ export const Login: React.FC = () => {
             <button
               type="button"
               className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-red-100 text-gray-700 transition-colors"
-              onClick={() => { setEmail('admin@email.com'); setPassword('password123'); }}
+              onClick={() => handleDirectLogin('admin')}
+              disabled={loading}
             >
               <Shield className="w-4 h-4 text-red-600" /> Ingresar como Admin
             </button>
             <button
               type="button"
               className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-red-100 text-gray-700 transition-colors"
-              onClick={() => { setEmail('docente@email.com'); setPassword('password123'); }}
+              onClick={() => handleDirectLogin('docente')}
+              disabled={loading}
             >
               <GraduationCap className="w-4 h-4 text-red-600" /> Ingresar como Docente
             </button>
             <button
               type="button"
               className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-red-100 text-gray-700 transition-colors"
-              onClick={() => { setEmail('estudiante@email.com'); setPassword('password123'); }}
+              onClick={() => handleDirectLogin('estudiante')}
+              disabled={loading}
             >
               <User className="w-4 h-4 text-red-600" /> Ingresar como Estudiante
             </button>
@@ -136,6 +164,15 @@ export const Login: React.FC = () => {
                 className="text-red-500 text-sm text-center"
               >
                 {error}
+              </motion.div>
+            )}
+
+            {loading && (
+              <motion.div
+                variants={itemVariants}
+                className="text-gray-500 text-sm text-center"
+              >
+                Ingresando...
               </motion.div>
             )}
 

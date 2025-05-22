@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import * as api from '../services/api';
 
-type RolUsuario = 'admin' | 'profesor' | 'estudiante';
+type RolUsuario = 'admin' | 'docente' | 'estudiante';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const profile = await api.getProfile();
           setIsAuthenticated(true);
-          setRol(profile.rol || 'estudiante');
+          setRol(profile.role || 'estudiante');
         } catch (error) {
           // Si hay error al obtener el perfil, limpiamos el token
           localStorage.removeItem('token');
