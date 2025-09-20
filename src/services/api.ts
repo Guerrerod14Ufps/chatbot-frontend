@@ -1,4 +1,4 @@
-const API_URL = 'https://chatbot-api-git-main-anderssoncardenas-projects.vercel.app/';
+const API_URL = 'https://chatbot-api-production-a45c.up.railway.app/';
 
 // Tipos
 export type UserRole = 'estudiante' | 'docente' | 'admin';
