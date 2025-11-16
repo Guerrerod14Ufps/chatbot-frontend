@@ -1,4 +1,4 @@
-const API_URL = 'https://chatbot-api-production-a45c.up.railway.app';
+const API_URL = 'https://chatbot-api-yikx.onrender.com';
 
 // Tipos
 export type UserRole = 'estudiante' | 'docente' | 'admin';
