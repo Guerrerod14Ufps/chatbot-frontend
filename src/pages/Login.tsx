@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AnimatedCard } from '../components/AnimatedCard';
 import { useAuth } from '../contexts/AuthContext';
 import * as api from '../services/api';
+import { useNotifications } from '../contexts/NotificationContext';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -13,6 +14,7 @@ export const Login: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { notifySuccess, notifyError } = useNotifications();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,6 +25,7 @@ export const Login: React.FC = () => {
       console.log(response);
       const profile = await api.getProfile();
       login(profile.role as 'admin' | 'docente' | 'estudiante');
+      notifySuccess('Sesión iniciada', `¡Bienvenido de nuevo, ${profile.fullname || 'usuario'}!`);
       
       // Redirigir según el rol
       if (profile.role === 'admin') {
@@ -30,8 +33,11 @@ export const Login: React.FC = () => {
       } else {
         navigate('/chatbot');
       }
-    } catch (err: any) {
-      setError(err.detail || 'Error al iniciar sesión');
+    } catch (err: unknown) {
+      const apiError = err as { detail?: string; message?: string };
+      const message = apiError?.detail || apiError?.message || 'Error al iniciar sesión';
+      setError(message);
+      notifyError('No se pudo iniciar sesión', message);
     } finally {
       setLoading(false);
     }

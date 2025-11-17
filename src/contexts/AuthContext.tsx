@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import * as api from '../services/api';
 
@@ -11,6 +11,7 @@ interface AuthContextType {
   photo: string | null;
   login: (rol: RolUsuario) => void;
   logout: () => void;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,34 +23,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [photo, setPhoto] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const profile = await api.getProfile();
-          setIsAuthenticated(true);
-          setRol(profile.role || 'estudiante');
-          setFullname(profile.fullname || null);
-          setPhoto(profile.photo || profile.photo_url || null);
-        } catch (error) {
-          // Si hay error al obtener el perfil, limpiamos el token
-          localStorage.removeItem('token');
-          setIsAuthenticated(false);
-          setRol(null);
-          setFullname(null);
-          setPhoto(null);
-        }
-      }
-      setIsLoading(false);
-    };
+  const refreshProfile = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setIsAuthenticated(false);
+      setRol(null);
+      setFullname(null);
+      setPhoto(null);
+      return;
+    }
 
-    checkAuth();
+    try {
+      const profile = await api.getProfile();
+      setIsAuthenticated(true);
+      setRol(profile.role || 'estudiante');
+      setFullname(profile.fullname || null);
+      setPhoto(profile.photo || profile.photo_url || null);
+    } catch (error) {
+      localStorage.removeItem('token');
+      setIsAuthenticated(false);
+      setRol(null);
+      setFullname(null);
+      setPhoto(null);
+      throw error;
+    }
   }, []);
 
-  const login = (rol: RolUsuario) => {
+  useEffect(() => {
+    refreshProfile().finally(() => setIsLoading(false));
+  }, [refreshProfile]);
+
+  const login = (rolUsuario: RolUsuario) => {
     setIsAuthenticated(true);
-    setRol(rol);
+    setRol(rolUsuario);
+    refreshProfile().catch(() => {
+      // Ignoramos el error aquí porque el flujo principal ya maneja el estado
+    });
   };
 
   const logout = () => {
@@ -65,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, rol, fullname, photo, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, rol, fullname, photo, login, logout, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

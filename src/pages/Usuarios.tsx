@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Sidebar } from '../components/Sidebar';
 import { AdminHeader } from '../components/AdminHeader';
 import { Search, Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -7,6 +7,7 @@ import { AnimatedCard } from '../components/AnimatedCard';
 import * as api from '../services/api';
 import { Dialog } from '@headlessui/react';
 import type { UserRole } from '../services/api';
+import { useNotifications } from '../contexts/NotificationContext';
 
 // Definir la interfaz User según la respuesta de la API
 interface User {
@@ -42,6 +43,14 @@ const itemVariants = {
   }
 };
 
+const getApiErrorMessage = (err: unknown, fallback: string) => {
+  if (err && typeof err === 'object') {
+    const { detail, message } = err as { detail?: string; message?: string };
+    return detail || message || fallback;
+  }
+  return fallback;
+};
+
 export const Usuarios: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRol, setSelectedRol] = useState('');
@@ -71,30 +80,32 @@ export const Usuarios: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
   const [editLoading, setEditLoading] = useState(false);
   const [deleteUserId, setDeleteUserId] = useState<number | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const { notifySuccess, notifyError } = useNotifications();
 
-  useEffect(() => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
-    api.getUsers()
-      .then(users => {
-        // Verifica que users sea un array
-        if (Array.isArray(users)) {
-          setUsuarios(users);
-        } else {
-          // Si no es un array, intenta convertirlo o maneja el error
-          setError('Formato de datos inesperado');
-          console.error('La API no devolvió un array:', users);
-        }
-      })
-      .catch((err) => {
-        const errorMessage = err.detail || err.message || 'Error al cargar usuarios';
-        setError(errorMessage);
-        console.error('Error al cargar usuarios:', err);
-      })
-      .finally(() => setLoading(false));
-      
-  }, []);
+
+    try {
+      const users = await api.getUsers();
+      if (Array.isArray(users)) {
+        setUsuarios(users);
+      } else {
+        throw new Error('Formato de datos inesperado');
+      }
+    } catch (err: unknown) {
+      const errorMessage = getApiErrorMessage(err, 'Error al cargar usuarios');
+      setError(errorMessage);
+      notifyError('No se pudieron cargar los usuarios', errorMessage);
+      console.error('Error al cargar usuarios:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [notifyError]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   useEffect(() => {
     api.getFAQs().then(data => console.log('Recursos:', data));
@@ -118,13 +129,12 @@ export const Usuarios: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
       setShowCreateModal(false);
       setShowConfirm(false);
       setNewUser({ fullname: '', email: '', password: '', role: 'estudiante' });
-      // Recargar usuarios
-      setLoading(true);
-      const users = await api.getUsers();
-      setUsuarios(users);
-      window.location.reload();
-    } catch (err: any) {
-      setCreateError(err.detail || 'Error al crear usuario');
+      await fetchUsers();
+      notifySuccess('Usuario creado', `${fullname} se registró correctamente.`);
+    } catch (err: unknown) {
+      const message = getApiErrorMessage(err, 'Error al crear usuario');
+      setCreateError(message);
+      notifyError('No se pudo crear el usuario', message);
     } finally {
       setCreateLoading(false);
     }
@@ -149,12 +159,11 @@ export const Usuarios: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
       }
       setShowEditModal(false);
       setEditUser(null);
-      setLoading(true);
-      const users = await api.getUsers();
-      setUsuarios(users);
-      window.location.reload();
-    } catch (err: any) {
-      alert('Error al actualizar usuario');
+      await fetchUsers();
+      notifySuccess('Usuario actualizado', `${editUser.fullname} se actualizó correctamente.`);
+    } catch (err: unknown) {
+      const message = getApiErrorMessage(err, 'Error al actualizar usuario');
+      notifyError('No se pudo actualizar el usuario', message);
     } finally {
       setEditLoading(false);
     }
@@ -166,12 +175,11 @@ export const Usuarios: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
     try {
       await api.deleteUser(deleteUserId);
       setDeleteUserId(null);
-      setLoading(true);
-      const users = await api.getUsers();
-      setUsuarios(users);
-      window.location.reload();
-    } catch (err: any) {
-      alert('Error al eliminar usuario');
+      await fetchUsers();
+      notifySuccess('Usuario eliminado', 'El usuario fue eliminado correctamente.');
+    } catch (err: unknown) {
+      const message = getApiErrorMessage(err, 'Error al eliminar usuario');
+      notifyError('No se pudo eliminar el usuario', message);
     } finally {
       setDeleteLoading(false);
     }

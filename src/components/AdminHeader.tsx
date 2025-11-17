@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { UserCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { setUserPhoto, unsetUserPhoto} from '../services/api';
+import { setUserPhoto, unsetUserPhoto } from '../services/api';
+import { useNotifications } from '../contexts/NotificationContext';
 
 const ROL_LABELS: Record<string, string> = {
   admin: 'Administrador',
@@ -16,9 +17,10 @@ interface AdminHeaderProps {
 export const AdminHeader: React.FC<AdminHeaderProps> = ({ onLogout }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const { rol, fullname, photo, logout } = useAuth();
+  const { rol, fullname, photo, logout, refreshProfile } = useAuth();
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { notifySuccess, notifyError, notifyInfo } = useNotifications();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -34,15 +36,9 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({ onLogout }) => {
     setOpen(false);
     if (onLogout) onLogout();
     logout();
+    notifyInfo('Sesión cerrada', 'Has salido correctamente del sistema.');
   };
 
-  const updatePhotoInContext = async () => {
-    try {
-      window.location.reload(); // Solución rápida, idealmente usar contexto
-    } catch {}
-  };
-
-  
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -50,9 +46,12 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({ onLogout }) => {
     setUploading(true);
     try {
       await setUserPhoto(file);
-      await updatePhotoInContext();
-    } catch (err) {
-      alert('Error al subir la foto');
+      await refreshProfile();
+      notifySuccess('Foto actualizada', 'Tu foto de perfil se guardó correctamente.');
+    } catch (err: unknown) {
+      const apiError = err as { detail?: string; message?: string };
+      const message = apiError?.detail || apiError?.message || 'No fue posible subir la foto.';
+      notifyError('Error al subir la foto', message);
     } finally {
       setUploading(false);
     }
@@ -62,9 +61,12 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({ onLogout }) => {
     setUploading(true);
     try {
       await unsetUserPhoto();
-      await updatePhotoInContext();
-    } catch (err) {
-      alert('Error al eliminar la foto');
+      await refreshProfile();
+      notifySuccess('Foto eliminada', 'Se quitó tu foto de perfil.');
+    } catch (err: unknown) {
+      const apiError = err as { detail?: string; message?: string };
+      const message = apiError?.detail || apiError?.message || 'No fue posible eliminar la foto.';
+      notifyError('Error al eliminar la foto', message);
     } finally {
       setUploading(false);
     }
