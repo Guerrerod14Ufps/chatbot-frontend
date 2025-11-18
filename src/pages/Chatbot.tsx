@@ -10,30 +10,91 @@ interface Mensaje {
   emisor: 'usuario' | 'bot';
 }
 
-const mensajesMock: Mensaje[] = [
-  { texto: 'Hola, estoy buscando cursos de formación complementaria en ingeniería de sistemas. ¿Me puedes ayudar?', emisor: 'usuario' },
-  { texto: '¡Hola! Claro, estaré encantado de ayudarte. ¿Tienes algún tema en específico que te interese, como desarrollo web, inteligencia artificial o bases de datos?', emisor: 'bot' },
-  { texto: 'Me interesa aprender sobre inteligencia artificial. ¿Qué opciones hay?', emisor: 'usuario' },
-  { texto: 'Excelente elección. Aquí tienes algunos cursos disponibles:\n1. Introducción a la Inteligencia Artificial – Nivel básico, duración: 6 semanas.\n2. Machine Learning con Python – Nivel intermedio, duración: 8 semanas.\n3. Redes Neuronales y Deep Learning – Nivel avanzado, duración: 10 semanas.\n¿Te gustaría más detalles sobre alguno en particular?', emisor: 'bot' },
-  { texto: 'Sí, cuéntame más sobre el curso de Machine Learning con Python.', emisor: 'usuario' },
-  { texto: 'Por supuesto. El curso Machine Learning con Python cubre los siguientes temas:\n📌 Introducción al aprendizaje automático\n📌 Regresión y clasificación\n📌 Algoritmos de aprendizaje supervisado y no supervisado\n📌 Implementación en Python...', emisor: 'bot' },
-];
-
 export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
-  const [mensajes, setMensajes] = useState<Mensaje[]>(mensajesMock);
+  const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const [input, setInput] = useState('');
+  const [estadoConexion, setEstadoConexion] = useState<'conectando' | 'listo' | 'cerrado' | 'error'>('conectando');
+  const [error, setError] = useState<string | null>(null);
+  const [modeloListo, setModeloListo] = useState(false);
+  const wsRef = useRef<WebSocket | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [mensajes]);
 
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('No se encontró un token activo. Inicia sesión nuevamente.');
+      setEstadoConexion('error');
+      return;
+    }
+
+    const wsUrl = `ws://chatbot-api-yikx.onrender.com/ws/chat?token=${encodeURIComponent(token)}`;
+    const websocket = new WebSocket(wsUrl);
+
+    wsRef.current = websocket;
+    setEstadoConexion('conectando');
+    setError(null);
+
+    websocket.onopen = () => {
+      setEstadoConexion('listo');
+    };
+
+    websocket.onmessage = (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data?.status === 'ready') {
+          setModeloListo(true);
+          return;
+        }
+        if (data?.error) {
+          setError(data.error);
+          setEstadoConexion('error');
+          return;
+        }
+      } catch {
+        setMensajes(prev => [...prev, { texto: event.data as string, emisor: 'bot' }]);
+        return;
+      }
+    };
+
+    websocket.onerror = () => {
+      setError('Error en la conexión con el chatbot.');
+      setEstadoConexion('error');
+    };
+
+    websocket.onclose = () => {
+      setEstadoConexion('cerrado');
+      setModeloListo(false);
+    };
+
+    return () => {
+      websocket.close(1000, 'Componente desmontado');
+      wsRef.current = null;
+    };
+  }, []);
+
   const handleSend = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!input.trim()) return;
-    setMensajes([...mensajes, { texto: input, emisor: 'usuario' }]);
+    if (wsRef.current?.readyState !== WebSocket.OPEN || !modeloListo) {
+      setError('El chatbot aún no está listo. Espera un momento e intenta de nuevo.');
+      return;
+    }
+
+    const mensajeUsuario = input.trim();
+    setMensajes(prev => [...prev, { texto: mensajeUsuario, emisor: 'usuario' }]);
     setInput('');
-    // Aquí podrías simular una respuesta del bot si lo deseas
+    setError(null);
+
+    try {
+      wsRef.current.send(mensajeUsuario);
+    } catch (err) {
+      console.error('Error enviando mensaje:', err);
+      setError('No se pudo enviar el mensaje. Revisa tu conexión.');
+    }
   };
 
   return (
@@ -48,6 +109,18 @@ export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
             transition={{ duration: 0.5 }}
             className="flex flex-col h-full max-h-[calc(100vh-80px)] bg-gray-200 rounded-lg shadow-lg overflow-hidden"
           >
+            <div className="px-4 py-2 bg-gray-100 text-sm text-gray-600 border-b border-gray-300 flex flex-wrap gap-2">
+              <span className="font-medium">
+                Estado:
+                {' '}
+                {estadoConexion === 'conectando' && 'Conectando...'}
+                {estadoConexion === 'listo' && 'Conectado'}
+                {estadoConexion === 'cerrado' && 'Desconectado'}
+                {estadoConexion === 'error' && 'Error'}
+              </span>
+              {!modeloListo && estadoConexion === 'listo' && <span>Preparando al asistente...</span>}
+              {error && <span className="text-red-600">{error}</span>}
+            </div>
             {/* Área de mensajes */}
             <div className="flex-1 overflow-y-auto px-2 md:px-8 py-6 space-y-4 bg-gray-200">
               {mensajes.map((msg, idx) => (
@@ -83,7 +156,8 @@ export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
                 type="submit"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
-                className="bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-lg transition-colors"
+                disabled={!input.trim() || estadoConexion !== 'listo' || !modeloListo}
+                className={`bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-lg transition-colors ${(!input.trim() || estadoConexion !== 'listo' || !modeloListo) ? 'opacity-60 cursor-not-allowed' : ''}`}
               >
                 <Send className="w-5 h-5" />
               </motion.button>
