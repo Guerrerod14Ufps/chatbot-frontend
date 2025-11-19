@@ -16,6 +16,7 @@ export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
   const [estadoConexion, setEstadoConexion] = useState<'conectando' | 'listo' | 'cerrado' | 'error'>('conectando');
   const [error, setError] = useState<string | null>(null);
   const [modeloListo, setModeloListo] = useState(false);
+  const [esperandoRespuesta, setEsperandoRespuesta] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -52,10 +53,18 @@ export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
         if (data?.error) {
           setError(data.error);
           setEstadoConexion('error');
+          setEsperandoRespuesta(false);
+          return;
+        }
+        if (data?.message || data?.texto) {
+          const contenido = data.message ?? data.texto;
+          setMensajes(prev => [...prev, { texto: contenido, emisor: 'bot' }]);
+          setEsperandoRespuesta(false);
           return;
         }
       } catch {
         setMensajes(prev => [...prev, { texto: event.data as string, emisor: 'bot' }]);
+        setEsperandoRespuesta(false);
         return;
       }
     };
@@ -63,11 +72,13 @@ export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
     websocket.onerror = () => {
       setError('Error en la conexión con el chatbot.');
       setEstadoConexion('error');
+      setEsperandoRespuesta(false);
     };
 
     websocket.onclose = () => {
       setEstadoConexion('cerrado');
       setModeloListo(false);
+      setEsperandoRespuesta(false);
     };
 
     return () => {
@@ -88,12 +99,14 @@ export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
     setMensajes(prev => [...prev, { texto: mensajeUsuario, emisor: 'usuario' }]);
     setInput('');
     setError(null);
+    setEsperandoRespuesta(true);
 
     try {
       wsRef.current.send(mensajeUsuario);
     } catch (err) {
       console.error('Error enviando mensaje:', err);
       setError('No se pudo enviar el mensaje. Revisa tu conexión.');
+      setEsperandoRespuesta(false);
     }
   };
 
@@ -140,24 +153,49 @@ export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
                   </AnimatedCard>
                 </motion.div>
               ))}
+              {esperandoRespuesta && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex justify-start"
+                >
+                  <AnimatedCard className="max-w-[70%] md:max-w-[50%] px-4 py-3 rounded-xl text-sm shadow-md bg-white/80 text-gray-700 border border-red-100">
+                    <div className="flex items-center gap-3">
+                      <Bot className="w-5 h-5 text-red-400" />
+                      <span className="text-sm font-medium">El asistente está escribiendo</span>
+                      <div className="flex gap-1">
+                        <span className="w-2 h-2 rounded-full bg-red-300 animate-bounce" />
+                        <span className="w-2 h-2 rounded-full bg-red-300 animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-2 h-2 rounded-full bg-red-300 animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                    </div>
+                  </AnimatedCard>
+                </motion.div>
+              )}
               <div ref={chatEndRef} />
             </div>
             {/* Input de mensaje */}
-            <form onSubmit={handleSend} className="bg-gray-100 px-4 py-4 flex items-center gap-2 border-t border-gray-300">
+            <form onSubmit={handleSend} className="bg-gray-100 px-4 py-4 flex items-center gap-2 border-t border-gray-300 relative">
+              {esperandoRespuesta && (
+                <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] rounded-t-lg flex items-center justify-center text-sm text-gray-600 font-medium pointer-events-none">
+                  El asistente está generando una respuesta...
+                </div>
+              )}
               <input
                 type="text"
-                className="flex-1 rounded-full px-4 py-2 border border-gray-300 focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none bg-white text-gray-700 shadow"
+                className={`flex-1 rounded-full px-4 py-2 border border-gray-300 focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none bg-white text-gray-700 shadow ${esperandoRespuesta ? 'opacity-60 cursor-not-allowed' : ''}`}
                 placeholder="¿Qué quieres saber ?"
                 value={input}
                 onChange={e => setInput(e.target.value)}
+                disabled={esperandoRespuesta || estadoConexion !== 'listo' || !modeloListo}
                 autoFocus
               />
               <motion.button
                 type="submit"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
-                disabled={!input.trim() || estadoConexion !== 'listo' || !modeloListo}
-                className={`bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-lg transition-colors ${(!input.trim() || estadoConexion !== 'listo' || !modeloListo) ? 'opacity-60 cursor-not-allowed' : ''}`}
+                disabled={!input.trim() || estadoConexion !== 'listo' || !modeloListo || esperandoRespuesta}
+                className={`bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-lg transition-colors ${(!input.trim() || estadoConexion !== 'listo' || !modeloListo || esperandoRespuesta) ? 'opacity-60 cursor-not-allowed' : ''}`}
               >
                 <Send className="w-5 h-5" />
               </motion.button>
