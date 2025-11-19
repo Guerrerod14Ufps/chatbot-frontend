@@ -1,6 +1,6 @@
-import React, { useRef, Suspense } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Environment } from '@react-three/drei';
+import React, { useRef, Suspense, memo, useState, useEffect } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { OrbitControls, Environment, useGLTF, Html, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface Model3DProps {
@@ -8,16 +8,66 @@ interface Model3DProps {
   color?: string;
   autoRotate?: boolean;
   modelUrl?: string;
+  rotationSpeed?: number;
+  enableZoom?: boolean;
+  enablePan?: boolean;
+  className?: string;
 }
 
-// Componente de geometría básica rotando
-function RotatingGeometry({ modelType = 'box', color = '#6366f1', autoRotate = true }: Model3DProps) {
+// Componente de carga con spinner
+function LoadingSpinner() {
+  return (
+    <Html center>
+      <div className="flex flex-col items-center gap-2">
+        <div className="w-8 h-8 border-4 border-gray-300 border-t-red-500 rounded-full animate-spin" />
+        <span className="text-xs text-gray-600">Cargando modelo...</span>
+      </div>
+    </Html>
+  );
+}
+
+// Componente de error
+function ErrorDisplay({ message }: { message: string }) {
+  return (
+    <Html center>
+      <div className="flex flex-col items-center gap-2 p-4 bg-red-50 rounded-lg border border-red-200">
+        <span className="text-sm text-red-600 font-medium">Error</span>
+        <span className="text-xs text-red-500">{message}</span>
+      </div>
+    </Html>
+  );
+}
+
+// Hook para auto-ajustar la cámara al modelo
+function AutoCamera({ target }: { target: THREE.Box3 }) {
+  const { camera } = useThree();
+  
+  useEffect(() => {
+    const size = target.getSize(new THREE.Vector3());
+    const center = target.getCenter(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const distance = maxDim * 2.5;
+    
+    camera.position.set(center.x, center.y + distance * 0.3, center.z + distance);
+    camera.lookAt(center);
+  }, [camera, target]);
+
+  return null;
+}
+
+// Componente de geometría básica rotando (optimizado con memo)
+const RotatingGeometry = memo(({ 
+  modelType = 'box', 
+  color = '#6366f1', 
+  autoRotate = true,
+  rotationSpeed = 0.5 
+}: Model3DProps) => {
   const meshRef = useRef<THREE.Mesh>(null);
 
   useFrame((_state, delta) => {
     if (meshRef.current && autoRotate) {
-      meshRef.current.rotation.x += delta * 0.5;
-      meshRef.current.rotation.y += delta * 0.5;
+      // Rotación más natural solo en Y
+      meshRef.current.rotation.y += delta * rotationSpeed;
     }
   });
 
@@ -41,56 +91,153 @@ function RotatingGeometry({ modelType = 'box', color = '#6366f1', autoRotate = t
       {getGeometry()}
       <meshStandardMaterial 
         color={color} 
-        metalness={0.6}
-        roughness={0.4}
+        metalness={0.7}
+        roughness={0.3}
+        envMapIntensity={1}
       />
     </mesh>
   );
+});
+
+RotatingGeometry.displayName = 'RotatingGeometry';
+
+// Componente de carga para modelos externos GLTF/GLB
+function ModelLoader({ 
+  url, 
+  autoRotate = true,
+  rotationSpeed = 0.5 
+}: { 
+  url: string;
+  autoRotate?: boolean;
+  rotationSpeed?: number;
+}) {
+  const [error, setError] = useState<string | null>(null);
+  const meshRef = useRef<THREE.Group>(null);
+  const boxRef = useRef<THREE.Box3 | null>(null);
+
+  try {
+    // Cargar modelo GLTF/GLB
+    const { scene } = useGLTF(url);
+    
+    // Calcular bounding box para auto-ajuste
+    useEffect(() => {
+      if (scene) {
+        scene.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
+        
+        const box = new THREE.Box3().setFromObject(scene);
+        boxRef.current = box;
+      }
+    }, [scene]);
+
+    useFrame((_state, delta) => {
+      if (meshRef.current && autoRotate) {
+        meshRef.current.rotation.y += delta * rotationSpeed;
+      }
+    });
+
+    if (error) {
+      return <ErrorDisplay message={error} />;
+    }
+
+    return (
+      <>
+        <primitive 
+          object={scene} 
+          ref={meshRef}
+          scale={1}
+        />
+        {boxRef.current && <AutoCamera target={boxRef.current} />}
+      </>
+    );
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Error al cargar el modelo';
+    setError(errorMessage);
+    return <ErrorDisplay message={errorMessage} />;
+  }
 }
 
-// Componente de carga para modelos externos
-function ModelLoader({ url: _url }: { url: string }) {
-  // Aquí puedes cargar modelos GLTF/GLB usando useGLTF de drei
-  // Por ahora retornamos una geometría básica
-  return <RotatingGeometry modelType="box" color="#8b5cf6" />;
-}
+// Pre-cargar modelos comunes (opcional, para mejor rendimiento)
+// useGLTF.preload('/models/example.glb');
 
-export const Model3D: React.FC<Model3DProps & { className?: string }> = ({ 
+export const Model3D: React.FC<Model3DProps> = ({ 
   modelType = 'box',
   color = '#6366f1',
   autoRotate = true,
   modelUrl,
+  rotationSpeed = 0.5,
+  enableZoom = false,
+  enablePan = false,
   className = ''
 }) => {
   return (
     <div className={`w-full h-full ${className}`}>
       <Canvas
         shadows
-        gl={{ antialias: true, alpha: true }}
+        gl={{ 
+          antialias: true, 
+          alpha: true,
+          powerPreference: 'high-performance',
+          stencil: false,
+          depth: true
+        }}
         camera={{ position: [0, 0, 5], fov: 50 }}
+        dpr={[1, 2]} // Pixel ratio adaptativo
+        performance={{ min: 0.5 }} // Reducir calidad si FPS baja
       >
-        <Suspense fallback={null}>
-          <ambientLight intensity={0.5} />
-          <directionalLight position={[5, 5, 5]} intensity={1} castShadow />
-          <pointLight position={[-5, -5, -5]} intensity={0.5} />
+        <Suspense fallback={<LoadingSpinner />}>
+          {/* Iluminación mejorada */}
+          <ambientLight intensity={0.4} />
+          <directionalLight 
+            position={[5, 5, 5]} 
+            intensity={1.2} 
+            castShadow 
+            shadow-mapSize-width={2048}
+            shadow-mapSize-height={2048}
+          />
+          <directionalLight position={[-5, 3, -5]} intensity={0.5} />
+          <pointLight position={[0, -5, 0]} intensity={0.3} />
           
+          {/* Modelo */}
           {modelUrl ? (
-            <ModelLoader url={modelUrl} />
+            <ModelLoader 
+              url={modelUrl} 
+              autoRotate={autoRotate}
+              rotationSpeed={rotationSpeed}
+            />
           ) : (
             <RotatingGeometry 
               modelType={modelType} 
               color={color} 
               autoRotate={autoRotate}
+              rotationSpeed={rotationSpeed}
             />
           )}
           
+          {/* Controles de órbita mejorados */}
           <OrbitControls 
-            enableZoom={false}
-            enablePan={false}
+            enableZoom={enableZoom}
+            enablePan={enablePan}
             minPolarAngle={Math.PI / 3}
             maxPolarAngle={Math.PI / 1.5}
+            enableDamping
+            dampingFactor={0.05}
+            autoRotate={false}
           />
-          <Environment preset="city" />
+          
+          {/* Ambiente y sombras */}
+          <Environment preset="sunset" />
+          <ContactShadows 
+            position={[0, -2, 0]} 
+            opacity={0.4} 
+            scale={10} 
+            blur={2} 
+            far={4.5} 
+          />
         </Suspense>
       </Canvas>
     </div>
