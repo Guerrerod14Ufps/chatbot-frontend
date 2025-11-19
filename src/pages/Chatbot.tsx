@@ -6,6 +6,10 @@ import { User, Bot, Send, Star } from 'lucide-react';
 import { AnimatedCard } from '../components/AnimatedCard';
 import { getChats, getChatById, updateChatSatisfaction } from '../services/api';
 import type { ChatItem } from '../services/api';
+import { useChatSocket } from '../contexts/ChatSocketContext';
+import type { MensajeChat } from '../contexts/ChatSocketContext';
+
+type Mensaje = MensajeChat;
 
 const NIVELES_SATISFACCION = [1, 2, 3, 4, 5];
 const ETIQUETAS_SATISFACCION: Record<number, string> = {
@@ -16,20 +20,8 @@ const ETIQUETAS_SATISFACCION: Record<number, string> = {
   5: 'Excelente',
 };
 
-interface Mensaje {
-  texto: string;
-  emisor: 'usuario' | 'bot';
-}
-
 export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
-  const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const [input, setInput] = useState('');
-  const [estadoConexion, setEstadoConexion] = useState<'conectando' | 'listo' | 'cerrado' | 'error'>('conectando');
-  const [error, setError] = useState<string | null>(null);
-  const [modeloListo, setModeloListo] = useState(false);
-  const [esperandoRespuesta, setEsperandoRespuesta] = useState(false);
-  const [chatIdActual, setChatIdActual] = useState<number | null>(null);
-  const [satisfaccion, setSatisfaccion] = useState<number | null>(null);
   const [guardandoSatisfaccion, setGuardandoSatisfaccion] = useState(false);
   const [mensajeSatisfaccion, setMensajeSatisfaccion] = useState<string | null>(null);
   const [tabActiva, setTabActiva] = useState<'chat' | 'historial'>('chat');
@@ -39,9 +31,19 @@ export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
   const [chatSeleccionado, setChatSeleccionado] = useState<ChatItem | null>(null);
   const [mensajesHistorial, setMensajesHistorial] = useState<Mensaje[]>([]);
   const [detalleCargando, setDetalleCargando] = useState(false);
-  const wsRef = useRef<WebSocket | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const satisfaccionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const {
+    mensajes,
+    estadoConexion,
+    errorConexion,
+    modeloListo,
+    esperandoRespuesta,
+    chatIdActual,
+    satisfaccion,
+    setSatisfaccion,
+    enviarMensaje,
+  } = useChatSocket();
 
   const normalizarMensajes = useCallback((messages?: ChatItem['messages']): Mensaje[] => {
     if (!messages?.length) return [];
@@ -160,95 +162,17 @@ export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setError('No se encontró un token activo. Inicia sesión nuevamente.');
-      setEstadoConexion('error');
-      return;
-    }
-
-    const wsUrl = `wss://chatbot-api-yikx.onrender.com/ws/chat?token=${encodeURIComponent(token)}`;
-    const websocket = new WebSocket(wsUrl);
-
-    wsRef.current = websocket;
-    setEstadoConexion('conectando');
-    setError(null);
-
-    websocket.onopen = () => {
-      setEstadoConexion('listo');
-    };
-
-    websocket.onmessage = (event: MessageEvent) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data?.status === 'ready') {
-          setModeloListo(true);
-          if (typeof data.chat_id === 'number') {
-            setChatIdActual(data.chat_id);
-            setSatisfaccion(data.satisfaction_level ?? null);
-          }
-          return;
-        }
-        if (data?.error) {
-          setError(data.error);
-          setEstadoConexion('error');
-          setEsperandoRespuesta(false);
-          return;
-        }
-        if (data?.message || data?.texto) {
-          const contenido = data.message ?? data.texto;
-          setMensajes(prev => [...prev, { texto: contenido, emisor: 'bot' }]);
-          setEsperandoRespuesta(false);
-          return;
-        }
-      } catch {
-        setMensajes(prev => [...prev, { texto: event.data as string, emisor: 'bot' }]);
-        setEsperandoRespuesta(false);
-        return;
-      }
-    };
-
-    websocket.onerror = () => {
-      setError('Error en la conexión con el chatbot.');
-      setEstadoConexion('error');
-      setEsperandoRespuesta(false);
-    };
-
-    websocket.onclose = () => {
-      setEstadoConexion('cerrado');
-      setModeloListo(false);
-      setEsperandoRespuesta(false);
-      setChatIdActual(null);
-      setSatisfaccion(null);
+    if (estadoConexion === 'cerrado') {
       setMensajeSatisfaccion(null);
-    };
-
-    return () => {
-      websocket.close(1000, 'Componente desmontado');
-      wsRef.current = null;
-    };
-  }, []);
+    }
+  }, [estadoConexion]);
 
   const handleSend = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!input.trim()) return;
-    if (wsRef.current?.readyState !== WebSocket.OPEN || !modeloListo) {
-      setError('El chatbot aún no está listo. Espera un momento e intenta de nuevo.');
-      return;
-    }
-
-    const mensajeUsuario = input.trim();
-    setMensajes(prev => [...prev, { texto: mensajeUsuario, emisor: 'usuario' }]);
-    setInput('');
-    setError(null);
-    setEsperandoRespuesta(true);
-
-    try {
-      wsRef.current.send(mensajeUsuario);
-    } catch (err) {
-      console.error('Error enviando mensaje:', err);
-      setError('No se pudo enviar el mensaje. Revisa tu conexión.');
-      setEsperandoRespuesta(false);
+    const enviado = enviarMensaje(input);
+    if (enviado) {
+      setInput('');
     }
   };
 
@@ -327,7 +251,7 @@ export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
                   {estadoConexion === 'error' && 'Error'}
                 </span>
                 {!modeloListo && estadoConexion === 'listo' && <span>Preparando al asistente...</span>}
-                {error && <span className="text-red-600">{error}</span>}
+                {errorConexion && <span className="text-red-600">{errorConexion}</span>}
               </div>
             ) : (
               <div className="px-4 py-2 bg-gray-100 text-sm text-gray-600 border-b border-gray-300 flex flex-wrap items-center justify-between gap-2">
