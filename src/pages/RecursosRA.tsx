@@ -17,8 +17,8 @@ interface Recurso {
 
 const recursos: Recurso[] = [
   { nombre: 'Campus Universitario', tipo: 'ar', modelType: 'box', color: '#ef4444' },
-  { nombre: 'Laboratorio de...', tipo: 'ar', modelType: 'sphere', color: '#3b82f6' },
-  { nombre: 'Árbol Binario Bu...', tipo: 'ar', modelType: 'cone', color: '#10b981' },
+  { nombre: 'FABLAB', tipo: 'ar', modelType: 'sphere', color: '#3b82f6' },
+  { nombre: 'Árbol Binario ', tipo: 'ar', modelType: 'cone', color: '#10b981' },
 ];
 
 const containerVariants = {
