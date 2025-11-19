@@ -24,6 +24,8 @@ export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
   const [input, setInput] = useState('');
   const [guardandoSatisfaccion, setGuardandoSatisfaccion] = useState(false);
   const [mensajeSatisfaccion, setMensajeSatisfaccion] = useState<string | null>(null);
+  const [guardandoSatisfaccionHistorial, setGuardandoSatisfaccionHistorial] = useState(false);
+  const [mensajeSatisfaccionHistorial, setMensajeSatisfaccionHistorial] = useState<string | null>(null);
   const [tabActiva, setTabActiva] = useState<'chat' | 'historial'>('chat');
   const [chatsHistorial, setChatsHistorial] = useState<ChatItem[]>([]);
   const [historialCargando, setHistorialCargando] = useState(false);
@@ -53,6 +55,14 @@ export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
     }));
   }, []);
 
+  const tieneMensajes = useCallback((chat?: ChatItem | null) => {
+    if (!chat) return false;
+    if (!chat.messages) {
+      return false;
+    }
+    return chat.messages.some(msg => (msg?.texto ?? '').trim().length > 0);
+  }, []);
+
   const formatearFecha = useCallback((fecha?: string) => {
     if (!fecha) return 'Sin fecha';
     const fechaObj = new Date(fecha);
@@ -73,6 +83,13 @@ export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
     setHistorialError(null);
     try {
       const chat = chatEnMemoria ?? await getChatById(chatId);
+      if (!tieneMensajes(chat)) {
+        setChatsHistorial(prev => prev.filter(item => item.id !== chat.id));
+        setHistorialError('Este chat no tiene mensajes guardados.');
+        setChatSeleccionado(null);
+        setMensajesHistorial([]);
+        return;
+      }
       setChatSeleccionado(chat);
       setMensajesHistorial(normalizarMensajes(chat.messages));
     } catch (err) {
@@ -81,16 +98,17 @@ export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
     } finally {
       setDetalleCargando(false);
     }
-  }, [normalizarMensajes]);
+  }, [normalizarMensajes, tieneMensajes]);
 
   const cargarHistorial = useCallback(async () => {
     setHistorialCargando(true);
     setHistorialError(null);
     try {
       const chats = await getChats();
-      setChatsHistorial(chats);
-      if (chats.length) {
-        await manejarSeleccionChat(chats[0].id, chats[0]);
+      const chatsConMensajes = chats.filter(ch => tieneMensajes(ch));
+      setChatsHistorial(chatsConMensajes);
+      if (chatsConMensajes.length) {
+        await manejarSeleccionChat(chatsConMensajes[0].id, chatsConMensajes[0]);
       } else {
         setChatSeleccionado(null);
         setMensajesHistorial([]);
@@ -101,27 +119,38 @@ export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
     } finally {
       setHistorialCargando(false);
     }
-  }, [manejarSeleccionChat]);
+  }, [manejarSeleccionChat, tieneMensajes]);
 
-  const manejarSatisfaccion = useCallback(async (nivel: number) => {
-    if (!chatIdActual) return;
-    setGuardandoSatisfaccion(true);
-    setMensajeSatisfaccion(null);
+  const manejarSatisfaccion = useCallback(async (nivel: number, opciones?: { chatId?: number; origen?: 'chat' | 'historial' }) => {
+    const objetivoId = opciones?.chatId ?? chatIdActual;
+    if (!objetivoId) return;
+    const esHistorial = opciones?.origen === 'historial';
+    const setGuardando = esHistorial ? setGuardandoSatisfaccionHistorial : setGuardandoSatisfaccion;
+    const setMensaje = esHistorial ? setMensajeSatisfaccionHistorial : setMensajeSatisfaccion;
+    setGuardando(true);
+    setMensaje(null);
     try {
-      const chatActualizado = await updateChatSatisfaction(chatIdActual, nivel);
-      setSatisfaccion(chatActualizado.satisfaction_level ?? nivel);
-      setMensajeSatisfaccion('Guardamos tu valoración.');
+      const chatActualizado = await updateChatSatisfaction(objetivoId, nivel);
+      const nuevoNivel = chatActualizado.satisfaction_level ?? nivel;
+      if (esHistorial) {
+        setChatsHistorial(prev => prev.map(chat => (chat.id === objetivoId ? { ...chat, satisfaction_level: nuevoNivel } : chat)));
+        setChatSeleccionado(prev => (prev && prev.id === objetivoId ? { ...prev, satisfaction_level: nuevoNivel } : prev));
+        setMensaje('Guardamos la valoración del historial.');
+      } else {
+        setSatisfaccion(nuevoNivel);
+        setMensaje('Guardamos tu valoración.');
+      }
     } catch (err) {
       console.error('Error guardando nivel de satisfacción:', err);
-      setMensajeSatisfaccion('No se pudo guardar tu nivel de satisfacción.');
+      setMensaje(esHistorial ? 'No se pudo guardar la valoración del historial.' : 'No se pudo guardar tu nivel de satisfacción.');
     } finally {
-      setGuardandoSatisfaccion(false);
+      setGuardando(false);
       if (satisfaccionTimeoutRef.current) {
         clearTimeout(satisfaccionTimeoutRef.current);
       }
-      satisfaccionTimeoutRef.current = setTimeout(() => setMensajeSatisfaccion(null), 4000);
+      satisfaccionTimeoutRef.current = setTimeout(() => setMensaje(null), 4000);
     }
-  }, [chatIdActual]);
+  }, [chatIdActual, setSatisfaccion]);
 
   const renderMensajes = (lista: Mensaje[]) => (
     lista.map((msg, idx) => (
@@ -166,6 +195,10 @@ export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
       setMensajeSatisfaccion(null);
     }
   }, [estadoConexion]);
+
+  useEffect(() => {
+    setMensajeSatisfaccionHistorial(null);
+  }, [chatSeleccionado?.id]);
 
   const handleSend = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -299,7 +332,7 @@ export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
                     {historialCargando ? (
                       <p className="text-sm text-gray-500">Cargando chats...</p>
                     ) : chatsHistorial.length === 0 ? (
-                      <p className="text-sm text-gray-600">No tienes chats registrados.</p>
+                      <p className="text-sm text-gray-600">No hay chats con mensajes guardados.</p>
                     ) : (
                       chatsHistorial.map(chat => {
                         const seleccionado = chatSeleccionado?.id === chat.id;
@@ -330,13 +363,38 @@ export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
                       <p className="text-sm text-gray-600">Selecciona un chat para ver sus mensajes.</p>
                     ) : (
                       <>
-                        <div className="text-sm text-gray-600">
+                        <div className="text-sm text-gray-600 space-y-1">
                           <p className="font-semibold text-gray-800">{chatSeleccionado.titulo}</p>
                           <p className="text-xs">{formatearFecha(chatSeleccionado.created_at)}</p>
-                          <p className="text-xs flex items-center gap-1 mt-1">
-                            <Star className="w-3.5 h-3.5 text-red-400" />
-                            {obtenerEtiquetaSatisfaccion(chatSeleccionado.satisfaction_level)}
-                          </p>
+                          <div className="text-xs flex flex-wrap items-center gap-2 mt-1">
+                            <span className="flex items-center gap-1">
+                              <Star className="w-3.5 h-3.5 text-red-400" />
+                              {obtenerEtiquetaSatisfaccion(chatSeleccionado.satisfaction_level)}
+                            </span>
+                            <div className="flex flex-wrap items-center gap-1">
+                              {NIVELES_SATISFACCION.map(nivel => {
+                                const activo = chatSeleccionado.satisfaction_level === nivel;
+                                return (
+                                  <button
+                                    key={`hist-${nivel}`}
+                                    type="button"
+                                    onClick={() => manejarSatisfaccion(nivel, { chatId: chatSeleccionado.id, origen: 'historial' })}
+                                    disabled={guardandoSatisfaccionHistorial}
+                                    className={`flex items-center gap-1 px-2 py-1 rounded-full border text-[11px] font-medium transition ${
+                                      activo ? 'bg-red-500 text-white border-red-500 shadow' : 'bg-white text-gray-700 border-gray-300 hover:border-red-300'
+                                    } ${guardandoSatisfaccionHistorial ? 'cursor-not-allowed opacity-70' : ''}`}
+                                    title="Actualiza la valoración de este chat"
+                                  >
+                                    <Star className={`w-3 h-3 ${activo ? 'text-white fill-white' : 'text-red-400'}`} />
+                                    <span>{nivel}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            {mensajeSatisfaccionHistorial && (
+                              <span className="text-green-600">{mensajeSatisfaccionHistorial}</span>
+                            )}
+                          </div>
                         </div>
                         {mensajesHistorial.length === 0 ? (
                           <p className="text-sm text-gray-600">Este chat no tiene mensajes guardados.</p>
