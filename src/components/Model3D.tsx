@@ -1,6 +1,6 @@
 import React, { useRef, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Environment } from '@react-three/drei';
+import { OrbitControls, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface Model3DProps {
@@ -14,7 +14,7 @@ interface Model3DProps {
 function RotatingGeometry({ modelType = 'box', color = '#6366f1', autoRotate = true }: Model3DProps) {
   const meshRef = useRef<THREE.Mesh>(null);
 
-  useFrame((state, delta) => {
+  useFrame((_state, delta) => {
     if (meshRef.current && autoRotate) {
       meshRef.current.rotation.x += delta * 0.5;
       meshRef.current.rotation.y += delta * 0.5;
@@ -49,7 +49,7 @@ function RotatingGeometry({ modelType = 'box', color = '#6366f1', autoRotate = t
 }
 
 // Componente de carga para modelos externos
-function ModelLoader({ url }: { url: string }) {
+function ModelLoader({ url: _url }: { url: string }) {
   // Aquí puedes cargar modelos GLTF/GLB usando useGLTF de drei
   // Por ahora retornamos una geometría básica
   return <RotatingGeometry modelType="box" color="#8b5cf6" />;
