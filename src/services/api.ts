@@ -4,6 +4,23 @@ const API_URL = 'https://chatbot-api-yikx.onrender.com';
 export type UserRole = 'estudiante' | 'docente' | 'admin';
 export type ResourceType = 'documento' | 'recurso_ra';
 
+export interface ChatMessageDTO {
+  id?: number;
+  role: 'user' | 'chatbot';
+  texto: string;
+  created_at?: string;
+}
+
+export interface ChatItem {
+  id: number;
+  user_id?: number;
+  titulo: string;
+  satisfaction_level?: number | null;
+  created_at?: string;
+  updated_at?: string;
+  messages?: ChatMessageDTO[];
+}
+
 // Interfaces
 interface UserCreate {
   fullname: string;
@@ -419,3 +436,36 @@ export async function verifyEmail(token: string): Promise<string> {
   if (!res.ok) throw await res.json();
   return await res.json();
 } 
+
+// Chats
+export async function getChats(): Promise<ChatItem[]> {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${API_URL}/chats`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) throw await res.json();
+  return await res.json();
+}
+
+export async function getChatById(chatId: number): Promise<ChatItem> {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${API_URL}/chats/${chatId}`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) throw await res.json();
+  return await res.json();
+}
+
+export async function updateChatSatisfaction(chatId: number, satisfactionLevel: number): Promise<ChatItem> {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${API_URL}/chats/${chatId}`, {
+    method: 'PUT',
+    headers: { 
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}` 
+    },
+    body: JSON.stringify({ satisfaction_level: satisfactionLevel })
+  });
+  if (!res.ok) throw await res.json();
+  return await res.json();
+}
