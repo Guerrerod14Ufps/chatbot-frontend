@@ -12,6 +12,7 @@ export default defineConfig({
   base: '/',
   optimizeDeps: {
     include: ['@appletosolutions/reactbits', 'gsap', 'ogl', 'matter-js'],
+    exclude: ['@chakra-ui/react'],
   },
   build: {
     outDir: 'dist',

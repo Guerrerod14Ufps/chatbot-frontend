@@ -6,7 +6,7 @@ import { AnimatedCard } from '../components/AnimatedCard';
 import { useAuth } from '../contexts/AuthContext';
 import * as api from '../services/api';
 import { useNotifications } from '../contexts/NotificationContext';
-import { ClickSpark, Bounce } from '@appletosolutions/reactbits';
+import { ClickSpark, Bounce } from '../utils/reactbits-wrappers';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');

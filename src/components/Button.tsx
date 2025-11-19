@@ -1,5 +1,5 @@
 import React from 'react';
-import { ClickSpark } from '@appletosolutions/reactbits';
+import { ClickSpark } from '../utils/reactbits-wrappers';
 
 interface ButtonProps {
   children: React.ReactNode;

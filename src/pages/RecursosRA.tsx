@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { AnimatedCard } from '../components/AnimatedCard';
 import { Model3D } from '../components/Model3D';
 import { Model3DViewer } from '../components/Model3DViewer';
-import { ClickSpark, Bounce } from '@appletosolutions/reactbits';
+import { ClickSpark, Bounce } from '../utils/reactbits-wrappers';
 
 interface Recurso {
   nombre: string;
