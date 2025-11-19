@@ -4,18 +4,21 @@ import { AdminHeader } from '../components/AdminHeader';
 import { Search, Upload, MoreHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { AnimatedCard } from '../components/AnimatedCard';
+import { Model3D } from '../components/Model3D';
 
-const recursos = [
-  { nombre: 'Campus Universitario', tipo: 'ar' },
-  { nombre: 'Laboratorio de...', tipo: 'ar' },
-  { nombre: 'Árbol Binario Bu...', tipo: 'ar' },
+interface Recurso {
+  nombre: string;
+  tipo: 'ar';
+  modelType?: 'box' | 'sphere' | 'torus' | 'cone' | 'cylinder';
+  color?: string;
+  modelUrl?: string;
+}
+
+const recursos: Recurso[] = [
+  { nombre: 'Campus Universitario', tipo: 'ar', modelType: 'box', color: '#ef4444' },
+  { nombre: 'Laboratorio de...', tipo: 'ar', modelType: 'sphere', color: '#3b82f6' },
+  { nombre: 'Árbol Binario Bu...', tipo: 'ar', modelType: 'cone', color: '#10b981' },
 ];
-
-const iconoAR = (
-  <div className="w-16 h-16 mx-auto bg-black rounded flex items-center justify-center">
-    <span className="text-white text-3xl font-bold">AR</span>
-  </div>
-);
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -84,10 +87,17 @@ export const RecursosRA: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
               <motion.div key={idx} variants={itemVariants}>
                 <AnimatedCard className="p-4">
                   <motion.div
-                    whileHover={{ scale: 1.05, rotate: 5 }}
+                    whileHover={{ scale: 1.05 }}
                     transition={{ duration: 0.2 }}
+                    className="w-full h-48 mb-2 rounded-lg overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200"
                   >
-                    {iconoAR}
+                    <Model3D
+                      modelType={recurso.modelType}
+                      color={recurso.color}
+                      modelUrl={recurso.modelUrl}
+                      autoRotate={true}
+                      className="w-full h-full"
+                    />
                   </motion.div>
                   <div className="mt-2 text-xs font-medium text-gray-700 truncate w-full text-center">
                     {recurso.nombre}
