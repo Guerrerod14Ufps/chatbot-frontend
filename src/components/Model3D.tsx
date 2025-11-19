@@ -1,7 +1,9 @@
 import React, { useRef, Suspense, memo, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Environment, useGLTF, Html, ContactShadows } from '@react-three/drei';
+import { OrbitControls, Environment, useGLTF, Html, ContactShadows, Grid } from '@react-three/drei';
 import * as THREE from 'three';
+
+type EnvironmentPreset = 'sunset' | 'city' | 'park' | 'night' | 'warehouse' | 'forest' | 'apartment' | 'studio';
 
 interface Model3DProps {
   modelType?: 'box' | 'sphere' | 'torus' | 'cone' | 'cylinder';
@@ -11,6 +13,9 @@ interface Model3DProps {
   rotationSpeed?: number;
   enableZoom?: boolean;
   enablePan?: boolean;
+  environment?: EnvironmentPreset;
+  wireframe?: boolean;
+  showGrid?: boolean;
   className?: string;
 }
 
@@ -60,7 +65,8 @@ const RotatingGeometry = memo(({
   modelType = 'box', 
   color = '#6366f1', 
   autoRotate = true,
-  rotationSpeed = 0.5 
+  rotationSpeed = 0.5,
+  wireframe = false
 }: Model3DProps) => {
   const meshRef = useRef<THREE.Mesh>(null);
 
@@ -94,6 +100,7 @@ const RotatingGeometry = memo(({
         metalness={0.7}
         roughness={0.3}
         envMapIntensity={1}
+        wireframe={wireframe}
       />
     </mesh>
   );
@@ -105,11 +112,13 @@ RotatingGeometry.displayName = 'RotatingGeometry';
 function ModelLoader({ 
   url, 
   autoRotate = true,
-  rotationSpeed = 0.5 
+  rotationSpeed = 0.5,
+  wireframe = false
 }: { 
   url: string;
   autoRotate?: boolean;
   rotationSpeed?: number;
+  wireframe?: boolean;
 }) {
   const [error, setError] = useState<string | null>(null);
   const meshRef = useRef<THREE.Group>(null);
@@ -126,13 +135,16 @@ function ModelLoader({
           if (child instanceof THREE.Mesh) {
             child.castShadow = true;
             child.receiveShadow = true;
+            if (child.material instanceof THREE.MeshStandardMaterial) {
+              child.material.wireframe = wireframe;
+            }
           }
         });
         
         const box = new THREE.Box3().setFromObject(scene);
         boxRef.current = box;
       }
-    }, [scene]);
+    }, [scene, wireframe]);
 
     useFrame((_state, delta) => {
       if (meshRef.current && autoRotate) {
@@ -164,7 +176,32 @@ function ModelLoader({
 // Pre-cargar modelos comunes (opcional, para mejor rendimiento)
 // useGLTF.preload('/models/example.glb');
 
-export const Model3D: React.FC<Model3DProps> = ({ 
+export interface Model3DRef {
+  resetCamera: () => void;
+}
+
+// Componente interno para manejar controles y reset
+const ControlsWithReset = React.forwardRef<Model3DRef, { controlsRef: React.MutableRefObject<any> }>(
+  ({ controlsRef }, forwardRef) => {
+    const { camera } = useThree();
+
+    React.useImperativeHandle(forwardRef, () => ({
+      resetCamera: () => {
+        if (controlsRef.current) {
+          controlsRef.current.reset();
+        }
+        camera.position.set(0, 0, 5);
+        camera.lookAt(0, 0, 0);
+      }
+    }));
+
+    return null;
+  }
+);
+
+ControlsWithReset.displayName = 'ControlsWithReset';
+
+export const Model3D = React.forwardRef<Model3DRef, Model3DProps>(({ 
   modelType = 'box',
   color = '#6366f1',
   autoRotate = true,
@@ -172,8 +209,13 @@ export const Model3D: React.FC<Model3DProps> = ({
   rotationSpeed = 0.5,
   enableZoom = false,
   enablePan = false,
+  environment = 'sunset',
+  wireframe = false,
+  showGrid = false,
   className = ''
-}) => {
+}, ref) => {
+  const controlsRef = useRef<any>(null);
+
   return (
     <div className={`w-full h-full ${className}`}>
       <Canvas
@@ -190,6 +232,19 @@ export const Model3D: React.FC<Model3DProps> = ({
         performance={{ min: 0.5 }} // Reducir calidad si FPS baja
       >
         <Suspense fallback={<LoadingSpinner />}>
+          {/* Grid opcional */}
+          {showGrid && (
+            <Grid
+              args={[10, 10]}
+              cellColor="#6b7280"
+              sectionColor="#9ca3af"
+              cellThickness={1}
+              sectionThickness={1}
+              fadeDistance={30}
+              fadeStrength={1}
+            />
+          )}
+
           {/* Iluminación mejorada */}
           <ambientLight intensity={0.4} />
           <directionalLight 
@@ -208,6 +263,7 @@ export const Model3D: React.FC<Model3DProps> = ({
               url={modelUrl} 
               autoRotate={autoRotate}
               rotationSpeed={rotationSpeed}
+              wireframe={wireframe}
             />
           ) : (
             <RotatingGeometry 
@@ -215,11 +271,13 @@ export const Model3D: React.FC<Model3DProps> = ({
               color={color} 
               autoRotate={autoRotate}
               rotationSpeed={rotationSpeed}
+              wireframe={wireframe}
             />
           )}
           
           {/* Controles de órbita mejorados */}
           <OrbitControls 
+            ref={controlsRef}
             enableZoom={enableZoom}
             enablePan={enablePan}
             minPolarAngle={Math.PI / 3}
@@ -228,9 +286,10 @@ export const Model3D: React.FC<Model3DProps> = ({
             dampingFactor={0.05}
             autoRotate={false}
           />
+          <ControlsWithReset controlsRef={controlsRef} ref={ref} />
           
           {/* Ambiente y sombras */}
-          <Environment preset="sunset" />
+          <Environment preset={environment} />
           <ContactShadows 
             position={[0, -2, 0]} 
             opacity={0.4} 
@@ -242,4 +301,6 @@ export const Model3D: React.FC<Model3DProps> = ({
       </Canvas>
     </div>
   );
-};
+});
+
+Model3D.displayName = 'Model3D';

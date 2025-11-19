@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Sidebar } from '../components/Sidebar';
 import { AdminHeader } from '../components/AdminHeader';
-import { Search, Upload, MoreHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Upload, MoreHorizontal, ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { AnimatedCard } from '../components/AnimatedCard';
 import { Model3D } from '../components/Model3D';
+import { Model3DViewer } from '../components/Model3DViewer';
 
 interface Recurso {
   nombre: string;
@@ -42,6 +43,19 @@ const itemVariants = {
 };
 
 export const RecursosRA: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
+  const [selectedRecurso, setSelectedRecurso] = useState<Recurso | null>(null);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+
+  const handleOpenViewer = (recurso: Recurso) => {
+    setSelectedRecurso(recurso);
+    setIsViewerOpen(true);
+  };
+
+  const handleCloseViewer = () => {
+    setIsViewerOpen(false);
+    setSelectedRecurso(null);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex">
       <Sidebar selected="Recursos RA" />
@@ -85,11 +99,12 @@ export const RecursosRA: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
           >
             {recursos.map((recurso, idx) => (
               <motion.div key={idx} variants={itemVariants}>
-                <AnimatedCard className="p-4">
+                <AnimatedCard className="p-4 relative group">
                   <motion.div
                     whileHover={{ scale: 1.05 }}
                     transition={{ duration: 0.2 }}
-                    className="w-full h-48 mb-2 rounded-lg overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200"
+                    className="w-full h-48 mb-2 rounded-lg overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 cursor-pointer relative"
+                    onClick={() => handleOpenViewer(recurso)}
                   >
                     <Model3D
                       modelType={recurso.modelType}
@@ -98,17 +113,39 @@ export const RecursosRA: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
                       autoRotate={true}
                       className="w-full h-full"
                     />
+                    {/* Overlay con botón de expandir */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        whileHover={{ opacity: 1, scale: 1 }}
+                        className="bg-white/90 rounded-full p-3 shadow-lg"
+                      >
+                        <Maximize2 className="w-6 h-6 text-gray-800" />
+                      </motion.div>
+                    </div>
                   </motion.div>
                   <div className="mt-2 text-xs font-medium text-gray-700 truncate w-full text-center">
                     {recurso.nombre}
                   </div>
-                  <motion.button
-                    whileHover={{ rotate: 90 }}
-                    transition={{ duration: 0.2 }}
-                    className="mt-2 text-gray-400 hover:text-gray-600 mx-auto block"
-                  >
-                    <MoreHorizontal className="w-5 h-5" />
-                  </motion.button>
+                  <div className="flex items-center justify-center gap-2 mt-2">
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => handleOpenViewer(recurso)}
+                      className="text-gray-400 hover:text-red-500 transition-colors"
+                      title="Ver en pantalla completa"
+                    >
+                      <Maximize2 className="w-4 h-4" />
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ rotate: 90 }}
+                      transition={{ duration: 0.2 }}
+                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                      title="Más opciones"
+                    >
+                      <MoreHorizontal className="w-4 h-4" />
+                    </motion.button>
+                  </div>
                 </AnimatedCard>
               </motion.div>
             ))}
@@ -138,6 +175,18 @@ export const RecursosRA: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
           </motion.div>
         </main>
       </div>
+
+      {/* Visor de pantalla completa */}
+      {selectedRecurso && (
+        <Model3DViewer
+          isOpen={isViewerOpen}
+          onClose={handleCloseViewer}
+          modelType={selectedRecurso.modelType}
+          color={selectedRecurso.color}
+          modelUrl={selectedRecurso.modelUrl}
+          title={selectedRecurso.nombre}
+        />
+      )}
     </div>
   );
 }; 
