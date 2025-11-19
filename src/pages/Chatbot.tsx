@@ -31,7 +31,7 @@ export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
       return;
     }
 
-    const wsUrl = `ws://chatbot-api-yikx.onrender.com/ws/chat?token=${encodeURIComponent(token)}`;
+    const wsUrl = `wss://chatbot-api-yikx.onrender.com/ws/chat?token=${encodeURIComponent(token)}`;
     const websocket = new WebSocket(wsUrl);
 
     wsRef.current = websocket;
