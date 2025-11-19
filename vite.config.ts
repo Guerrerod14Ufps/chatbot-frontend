@@ -10,6 +10,9 @@ const __dirname = dirname(__filename)
 export default defineConfig({
   plugins: [react()],
   base: '/',
+  optimizeDeps: {
+    include: ['@appletosolutions/reactbits', 'gsap', 'ogl', 'matter-js'],
+  },
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
@@ -21,6 +24,10 @@ export default defineConfig({
         chunkFileNames: 'assets/[name].[hash].js',
         entryFileNames: 'assets/[name].[hash].js',
       },
+    },
+    commonjsOptions: {
+      include: [/node_modules/],
+      transformMixedEsModules: true,
     },
   },
   resolve: {

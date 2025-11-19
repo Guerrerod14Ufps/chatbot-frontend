@@ -1,4 +1,5 @@
 import React from 'react';
+import { ClickSpark } from '@appletosolutions/reactbits';
 
 interface ButtonProps {
   children: React.ReactNode;
@@ -6,6 +7,8 @@ interface ButtonProps {
   variant?: 'primary' | 'secondary';
   className?: string;
   type?: 'button' | 'submit' | 'reset';
+  withSpark?: boolean;
+  sparkColor?: string;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -14,6 +17,8 @@ export const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
   className = '',
   type = 'button',
+  withSpark = true,
+  sparkColor,
 }) => {
   const baseStyles = 'px-4 py-2 rounded-md font-medium transition-colors duration-200';
   const variantStyles = {
@@ -21,7 +26,10 @@ export const Button: React.FC<ButtonProps> = ({
     secondary: 'bg-gray-200 text-gray-800 hover:bg-gray-300',
   };
 
-  return (
+  const defaultSparkColor = variant === 'primary' ? '#3b82f6' : '#6b7280';
+  const finalSparkColor = sparkColor || defaultSparkColor;
+
+  const button = (
     <button
       onClick={onClick}
       className={`${baseStyles} ${variantStyles[variant]} ${className}`}
@@ -30,4 +38,14 @@ export const Button: React.FC<ButtonProps> = ({
       {children}
     </button>
   );
+
+  if (withSpark) {
+    return (
+      <ClickSpark sparkColor={finalSparkColor} sparkCount={8}>
+        {button}
+      </ClickSpark>
+    );
+  }
+
+  return button;
 }; 

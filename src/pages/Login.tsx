@@ -6,6 +6,7 @@ import { AnimatedCard } from '../components/AnimatedCard';
 import { useAuth } from '../contexts/AuthContext';
 import * as api from '../services/api';
 import { useNotifications } from '../contexts/NotificationContext';
+import { ClickSpark, Bounce } from '@appletosolutions/reactbits';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -75,10 +76,12 @@ export const Login: React.FC = () => {
         animate="visible"
       >
         <AnimatedCard className="bg-white rounded-xl shadow-xl p-8">
-          <motion.div variants={itemVariants} className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-red-600 mb-2">Bienvenido</h1>
-            <p className="text-gray-600">Inicia sesión para continuar</p>
-          </motion.div>
+          <Bounce>
+            <motion.div variants={itemVariants} className="text-center mb-8">
+              <h1 className="text-3xl font-bold text-red-600 mb-2">Bienvenido</h1>
+              <p className="text-gray-600">Inicia sesión para continuar</p>
+            </motion.div>
+          </Bounce>
 
           
 
@@ -136,20 +139,22 @@ export const Login: React.FC = () => {
             )}
 
             <motion.div variants={itemVariants}>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50"
-              >
-                {loading ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <span>Iniciar Sesión</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
+              <ClickSpark sparkColor="#dc2626" sparkCount={12}>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50"
+                >
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <span>Iniciar Sesión</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </ClickSpark>
             </motion.div>
           </form>
 
