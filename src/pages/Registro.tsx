@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, User, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, User, ArrowLeft, CheckCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AnimatedCard } from '../components/AnimatedCard';
 import * as api from '../services/api';
@@ -12,6 +12,7 @@ export const Registro: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [registroExitoso, setRegistroExitoso] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,9 +26,7 @@ export const Registro: React.FC = () => {
     setError(null);
     try {
       await api.register({ fullname, email, password });
-      navigate('/login', { 
-        state: { message: 'Registro exitoso. Por favor inicia sesión.' }
-      });
+      setRegistroExitoso(true);
     } catch (err: any) {
       setError(err.detail || 'Error al registrar usuario');
     } finally {
@@ -65,12 +64,54 @@ export const Registro: React.FC = () => {
         animate="visible"
       >
         <AnimatedCard className="bg-white rounded-xl shadow-xl p-8">
-          <motion.div variants={itemVariants} className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-red-600 mb-2">Crear Cuenta</h1>
-            <p className="text-gray-600">Regístrate para comenzar</p>
-          </motion.div>
+          {registroExitoso ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center space-y-6"
+            >
+              <div className="flex justify-center">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+                >
+                  <CheckCircle className="w-20 h-20 text-green-500 mx-auto" />
+                </motion.div>
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-3">
+                  ¡Registro exitoso!
+                </h2>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <p className="text-blue-800 font-medium mb-2">
+                    Por favor, revisa tu correo electrónico
+                  </p>
+                  <p className="text-blue-700 text-sm">
+                    Hemos enviado un enlace de verificación a <strong>{email}</strong>. 
+                    Haz clic en el enlace para activar tu cuenta.
+                  </p>
+                </div>
+                <p className="text-gray-600 text-sm mb-6">
+                  Si no encuentras el correo, revisa tu carpeta de spam.
+                </p>
+              </div>
+              <Link
+                to="/login"
+                className="inline-block w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center space-x-2"
+              >
+                <span>Ir a iniciar sesión</span>
+                <ArrowLeft className="w-4 h-4" />
+              </Link>
+            </motion.div>
+          ) : (
+            <>
+              <motion.div variants={itemVariants} className="text-center mb-8">
+                <h1 className="text-3xl font-bold text-red-600 mb-2">Crear Cuenta</h1>
+                <p className="text-gray-600">Regístrate para comenzar</p>
+              </motion.div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
             <motion.div variants={itemVariants}>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Nombre Completo
@@ -176,6 +217,8 @@ export const Registro: React.FC = () => {
               ¿Ya tienes una cuenta? Inicia sesión
             </Link>
           </motion.div>
+            </>
+          )}
         </AnimatedCard>
       </motion.div>
     </div>
