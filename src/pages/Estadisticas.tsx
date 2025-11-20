@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Sidebar } from '../components/Sidebar';
 import { AdminHeader } from '../components/AdminHeader';
 import { Users, TrendingUp, Clock, MessageSquare } from 'lucide-react';
-import { Bar, Doughnut } from 'react-chartjs-2';
+import { Bar } from 'react-chartjs-2';
 import { motion } from 'framer-motion';
 import { AnimatedCard } from '../components/AnimatedCard';
 import { getReports } from '../services/api';
@@ -15,7 +15,6 @@ import {
   Title,
   Tooltip,
   Legend,
-  ArcElement,
 } from 'chart.js';
 
 ChartJS.register(
@@ -24,8 +23,7 @@ ChartJS.register(
   BarElement,
   Title,
   Tooltip,
-  Legend,
-  ArcElement
+  Legend
 );
 
 const formatearTiempo = (segundos: number | null): string => {
