@@ -298,43 +298,44 @@ export const Estadisticas: React.FC<{onLogout?: () => void}> = ({ onLogout }) =>
                     <RefreshCw className="w-6 h-6 animate-spin" />
                   </div>
                 ) : (
-                  <Bar
-                    data={comparacionMensajes}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend: {
-                          display: false,
-                        },
-                        tooltip: {
-                          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                          padding: 12,
-                          titleFont: { size: 14 },
-                          bodyFont: { size: 13 },
-                        },
-                      },
-                      scales: {
-                        y: {
-                          beginAtZero: true,
-                          grid: {
-                            color: 'rgba(0, 0, 0, 0.1)',
+                  <div className="h-[300px]">
+                    <Bar
+                      data={comparacionMensajes}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                          legend: {
+                            display: false,
                           },
-                          ticks: {
-                            callback: function(value) {
-                              return value.toLocaleString();
+                          tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleFont: { size: 14 },
+                            bodyFont: { size: 13 },
+                          },
+                        },
+                        scales: {
+                          y: {
+                            beginAtZero: true,
+                            grid: {
+                              color: 'rgba(0, 0, 0, 0.1)',
+                            },
+                            ticks: {
+                              callback: function(value) {
+                                return value.toLocaleString();
+                              },
+                            },
+                          },
+                          x: {
+                            grid: {
+                              display: false,
                             },
                           },
                         },
-                        x: {
-                          grid: {
-                            display: false,
-                          },
-                        },
-                      },
-                    }}
-                    height={300}
-                  />
+                      }}
+                    />
+                  </div>
                 )}
               </AnimatedCard>
             </motion.div>
@@ -351,45 +352,46 @@ export const Estadisticas: React.FC<{onLogout?: () => void}> = ({ onLogout }) =>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <Line
-                      data={datosSatisfaccion}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                          legend: {
-                            display: false,
-                          },
-                          tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            padding: 12,
-                            callbacks: {
-                              label: function(context) {
-                                return `Satisfacción: ${context.parsed.y.toFixed(1)}/5`;
+                    <div className="h-[200px]">
+                      <Line
+                        data={datosSatisfaccion}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: {
+                              display: false,
+                            },
+                            tooltip: {
+                              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                              padding: 12,
+                              callbacks: {
+                                label: function(context) {
+                                  return `Satisfacción: ${context.parsed.y.toFixed(1)}/5`;
+                                },
                               },
                             },
                           },
-                        },
-                        scales: {
-                          y: {
-                            beginAtZero: true,
-                            max: 5,
-                            grid: {
-                              color: 'rgba(0, 0, 0, 0.1)',
+                          scales: {
+                            y: {
+                              beginAtZero: true,
+                              max: 5,
+                              grid: {
+                                color: 'rgba(0, 0, 0, 0.1)',
+                              },
+                              ticks: {
+                                stepSize: 1,
+                              },
                             },
-                            ticks: {
-                              stepSize: 1,
+                            x: {
+                              grid: {
+                                display: false,
+                              },
                             },
                           },
-                          x: {
-                            grid: {
-                              display: false,
-                            },
-                          },
-                        },
-                      }}
-                      height={200}
-                    />
+                        }}
+                      />
+                    </div>
                     <div className="mt-4 p-4 bg-red-50 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium text-gray-700">Satisfacción promedio</span>
