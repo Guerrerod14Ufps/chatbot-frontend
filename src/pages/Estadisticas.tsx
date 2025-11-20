@@ -394,7 +394,7 @@ export const Estadisticas: React.FC<{onLogout?: () => void}> = ({ onLogout }) =>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium text-gray-700">Satisfacción promedio</span>
                         <span className="text-lg font-bold text-red-600">
-                          {formatearSatisfaccion(datos?.average_satisfaction_level)}
+                          {formatearSatisfaccion(datos?.average_satisfaction_level ?? null)}
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-3">
