@@ -469,3 +469,21 @@ export async function updateChatSatisfaction(chatId: number, satisfactionLevel: 
   if (!res.ok) throw await res.json();
   return await res.json();
 }
+
+// Estadísticas/Reportes
+export interface ReportData {
+  total_users: number;
+  total_user_messages: number;
+  daily_user_messages: number;
+  average_satisfaction_level: number | null;
+  average_response_time: number | null;
+}
+
+export async function getReports(): Promise<ReportData> {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${API_URL}/reports/`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) throw await res.json();
+  return await res.json();
+}

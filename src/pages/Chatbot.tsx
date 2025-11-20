@@ -219,7 +219,7 @@ export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="flex flex-col h-full max-h-[calc(100vh-80px)] bg-gray-200 rounded-lg shadow-lg overflow-hidden"
+            className="flex flex-col h-full max-h-[calc(100vh-80px)] bg-gray-200 rounded-lg shadow-lg overflow-hidden min-h-0"
           >
             <div className="px-4 py-3 bg-white border-b border-gray-300 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
@@ -301,9 +301,9 @@ export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
                 </button>
               </div>
             )}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col min-h-0">
               {tabActiva === 'chat' ? (
-                <div className="flex-1 overflow-y-auto px-2 md:px-8 py-6 space-y-4 bg-gray-200">
+                <div className="flex-1 overflow-y-auto px-2 md:px-8 py-6 space-y-4 bg-gray-200 min-h-0">
                   {renderMensajes(mensajes)}
                   {esperandoRespuesta && (
                     <motion.div
@@ -327,8 +327,8 @@ export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
                   <div ref={chatEndRef} />
                 </div>
               ) : (
-                <div className="flex flex-1 flex-col md:flex-row bg-gray-200">
-                  <div className="md:w-1/3 border-b md:border-b-0 md:border-r border-gray-300 bg-white/80 px-4 py-4 space-y-3 overflow-y-auto max-h-64 md:max-h-full">
+                <div className="flex flex-1 flex-col md:flex-row bg-gray-200 min-h-0">
+                  <div className="md:w-1/3 border-b md:border-b-0 md:border-r border-gray-300 bg-white/80 px-4 py-4 space-y-3 overflow-y-auto max-h-64 md:max-h-full min-h-0">
                     {historialCargando ? (
                       <p className="text-sm text-gray-500">Cargando chats...</p>
                     ) : chatsHistorial.length === 0 ? (
@@ -356,7 +356,7 @@ export const Chatbot: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
                       })
                     )}
                   </div>
-                  <div className="flex-1 overflow-y-auto px-2 md:px-8 py-6 space-y-4">
+                  <div className="flex-1 overflow-y-auto px-2 md:px-8 py-6 space-y-4 min-h-0">
                     {detalleCargando ? (
                       <p className="text-sm text-gray-600">Cargando conversación...</p>
                     ) : !chatSeleccionado ? (

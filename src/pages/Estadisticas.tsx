@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from '../components/Sidebar';
 import { AdminHeader } from '../components/AdminHeader';
 import { Users, TrendingUp, Clock, MessageSquare } from 'lucide-react';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import { motion } from 'framer-motion';
 import { AnimatedCard } from '../components/AnimatedCard';
+import { getReports } from '../services/api';
+import type { ReportData } from '../services/api';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -26,43 +28,18 @@ ChartJS.register(
   ArcElement
 );
 
-// Datos de ejemplo
-const visitasPorDia = {
-  labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
-  datasets: [
-    {
-      label: 'Visitas',
-      data: [65, 59, 80, 81, 56, 55, 40],
-      backgroundColor: 'rgba(220, 38, 38, 0.5)',
-      borderColor: 'rgb(220, 38, 38)',
-      borderWidth: 1,
-    },
-  ],
+const formatearTiempo = (segundos: number | null): string => {
+  if (!segundos) return 'N/A';
+  if (segundos < 60) return `${Math.round(segundos)}s`;
+  const minutos = Math.floor(segundos / 60);
+  const segs = Math.round(segundos % 60);
+  return `${minutos}m ${segs}s`;
 };
 
-const temasConsultados = {
-  labels: ['Prácticas', 'Grado', 'Movilidad', 'Certificados', 'Otros'],
-  datasets: [
-    {
-      data: [35, 25, 20, 15, 5],
-      backgroundColor: [
-        'rgba(220, 38, 38, 0.8)',
-        'rgba(239, 68, 68, 0.8)',
-        'rgba(248, 113, 113, 0.8)',
-        'rgba(252, 165, 165, 0.8)',
-        'rgba(254, 202, 202, 0.8)',
-      ],
-      borderWidth: 1,
-    },
-  ],
+const formatearSatisfaccion = (nivel: number | null): string => {
+  if (!nivel) return 'N/A';
+  return `${nivel.toFixed(1)}/5`;
 };
-
-const metricas = [
-  { titulo: 'Usuarios Totales', valor: '1,234', icono: Users },
-  { titulo: 'Consultas Hoy', valor: '156', icono: MessageSquare },
-  { titulo: 'Tiempo Promedio', valor: '3.5 min', icono: Clock },
-  { titulo: 'Crecimiento', valor: '+12%', icono: TrendingUp },
-];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -86,12 +63,84 @@ const itemVariants = {
 };
 
 export const Estadisticas: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
+  const [datos, setDatos] = useState<ReportData | null>(null);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const cargarEstadisticas = async () => {
+      setCargando(true);
+      setError(null);
+      try {
+        const reportData = await getReports();
+        setDatos(reportData);
+      } catch (err) {
+        console.error('Error cargando estadísticas:', err);
+        setError('No se pudieron cargar las estadísticas.');
+      } finally {
+        setCargando(false);
+      }
+    };
+
+    cargarEstadisticas();
+  }, []);
+
+  const comparacionMensajes = {
+    labels: ['Mensajes Totales', 'Mensajes Hoy'],
+    datasets: [
+      {
+        label: 'Cantidad de Mensajes',
+        data: datos ? [
+          datos.total_user_messages || 0,
+          datos.daily_user_messages || 0
+        ] : [0, 0],
+        backgroundColor: [
+          'rgba(220, 38, 38, 0.5)',
+          'rgba(239, 68, 68, 0.5)',
+        ],
+        borderColor: [
+          'rgb(220, 38, 38)',
+          'rgb(239, 68, 68)',
+        ],
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const metricas = [
+    { 
+      titulo: 'Usuarios Totales', 
+      valor: datos ? datos.total_users.toLocaleString() : '...', 
+      icono: Users 
+    },
+    { 
+      titulo: 'Mensajes Totales', 
+      valor: datos ? datos.total_user_messages.toLocaleString() : '...', 
+      icono: MessageSquare 
+    },
+    { 
+      titulo: 'Tiempo Promedio Respuesta', 
+      valor: datos ? formatearTiempo(datos.average_response_time) : '...', 
+      icono: Clock 
+    },
+    { 
+      titulo: 'Satisfacción Promedio', 
+      valor: datos ? formatearSatisfaccion(datos.average_satisfaction_level) : '...', 
+      icono: TrendingUp 
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex">
       <Sidebar selected="Estadísticas" />
       <div className="flex-1 flex flex-col">
         <AdminHeader onLogout={onLogout} />
         <main className="flex-1 p-8">
+          {error && (
+            <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+              {error}
+            </div>
+          )}
           <motion.div
             variants={containerVariants}
             initial="hidden"
@@ -112,7 +161,7 @@ export const Estadisticas: React.FC<{onLogout?: () => void}> = ({ onLogout }) =>
                           transition={{ duration: 0.5 }}
                           className="text-2xl font-semibold mt-1 text-gray-800"
                         >
-                          {metrica.valor}
+                          {cargando ? 'Cargando...' : metrica.valor}
                         </motion.p>
                       </div>
                       <motion.div
@@ -136,56 +185,68 @@ export const Estadisticas: React.FC<{onLogout?: () => void}> = ({ onLogout }) =>
           >
             <motion.div variants={itemVariants}>
               <AnimatedCard className="p-6">
-                <h3 className="text-lg font-semibold mb-4 text-gray-800">Visitas por Día</h3>
-                <Bar
-                  data={visitasPorDia}
-                  options={{
-                    responsive: true,
-                    plugins: {
-                      legend: {
-                        display: false,
-                      },
-                    },
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                        grid: {
-                          color: 'rgba(0, 0, 0, 0.1)',
-                        },
-                      },
-                      x: {
-                        grid: {
+                <h3 className="text-lg font-semibold mb-4 text-gray-800">Comparación de Mensajes</h3>
+                {cargando ? (
+                  <div className="h-[300px] flex items-center justify-center text-gray-500">
+                    Cargando datos...
+                  </div>
+                ) : (
+                  <Bar
+                    data={comparacionMensajes}
+                    options={{
+                      responsive: true,
+                      plugins: {
+                        legend: {
                           display: false,
                         },
                       },
-                    },
-                  }}
-                />
-              </AnimatedCard>
-            </motion.div>
-
-            <motion.div variants={itemVariants}>
-              <AnimatedCard className="p-6">
-                <h3 className="text-lg font-semibold mb-4 text-gray-800">Temas Consultados</h3>
-                <div className="h-[300px] flex items-center justify-center">
-                  <Doughnut
-                    data={temasConsultados}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend: {
-                          position: 'right',
-                          labels: {
-                            padding: 20,
-                            font: {
-                              size: 12,
-                            },
+                      scales: {
+                        y: {
+                          beginAtZero: true,
+                          grid: {
+                            color: 'rgba(0, 0, 0, 0.1)',
+                          },
+                        },
+                        x: {
+                          grid: {
+                            display: false,
                           },
                         },
                       },
                     }}
                   />
+                )}
+              </AnimatedCard>
+            </motion.div>
+
+            <motion.div variants={itemVariants}>
+              <AnimatedCard className="p-6">
+                <h3 className="text-lg font-semibold mb-4 text-gray-800">Resumen de Estadísticas</h3>
+                <div className="h-[300px] flex flex-col items-center justify-center space-y-4 text-gray-700">
+                  {cargando ? (
+                    <p className="text-gray-500">Cargando datos...</p>
+                  ) : datos ? (
+                    <>
+                      <div className="text-center">
+                        <p className="text-sm text-gray-500">Mensajes del día</p>
+                        <p className="text-3xl font-bold text-red-600">{datos.daily_user_messages}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm text-gray-500">Satisfacción promedio</p>
+                        <p className="text-2xl font-semibold text-red-600">
+                          {formatearSatisfaccion(datos.average_satisfaction_level)}
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm text-gray-500">Tiempo promedio de respuesta</p>
+                        <p className="text-2xl font-semibold text-red-600">
+                          {formatearTiempo(datos.average_response_time)}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-gray-500">No hay datos disponibles</p>
+                  )}
                 </div>
               </AnimatedCard>
             </motion.div>
