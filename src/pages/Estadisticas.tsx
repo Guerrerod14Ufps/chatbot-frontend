@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Sidebar } from '../components/Sidebar';
 import { AdminHeader } from '../components/AdminHeader';
-import { Users, TrendingUp, Clock, MessageSquare, Download, RefreshCw, Star } from 'lucide-react';
-import { Bar, Line } from 'react-chartjs-2';
+import { Users, TrendingUp, Clock, MessageSquare, Download, RefreshCw } from 'lucide-react';
+import { Bar } from 'react-chartjs-2';
 import { motion } from 'framer-motion';
 import { AnimatedCard } from '../components/AnimatedCard';
 import { getReports } from '../services/api';
@@ -14,8 +14,6 @@ import {
   CategoryScale,
   LinearScale,
   BarElement,
-  LineElement,
-  PointElement,
   Title,
   Tooltip,
   Legend,
@@ -25,8 +23,6 @@ ChartJS.register(
   CategoryScale,
   LinearScale,
   BarElement,
-  LineElement,
-  PointElement,
   Title,
   Tooltip,
   Legend
@@ -154,21 +150,6 @@ export const Estadisticas: React.FC<{onLogout?: () => void}> = ({ onLogout }) =>
     ],
   };
 
-  const datosSatisfaccion = {
-    labels: ['Satisfacción'],
-    datasets: [
-      {
-        label: 'Nivel de Satisfacción (1-5)',
-        data: datos ? [datos.average_satisfaction_level || 0] : [0],
-        borderColor: 'rgb(220, 38, 38)',
-        backgroundColor: 'rgba(220, 38, 38, 0.1)',
-        borderWidth: 3,
-        fill: true,
-        tension: 0.4,
-      },
-    ],
-  };
-
   const metricas = [
     { 
       titulo: 'Usuarios Totales', 
@@ -191,10 +172,6 @@ export const Estadisticas: React.FC<{onLogout?: () => void}> = ({ onLogout }) =>
       icono: TrendingUp 
     },
   ];
-
-  const porcentajeSatisfaccion = datos?.average_satisfaction_level 
-    ? ((datos.average_satisfaction_level / 5) * 100).toFixed(1)
-    : '0';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex">
@@ -285,7 +262,7 @@ export const Estadisticas: React.FC<{onLogout?: () => void}> = ({ onLogout }) =>
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+            className="max-w-4xl mx-auto"
           >
             <motion.div variants={itemVariants}>
               <AnimatedCard className="p-6">
@@ -294,11 +271,11 @@ export const Estadisticas: React.FC<{onLogout?: () => void}> = ({ onLogout }) =>
                   Comparación de Mensajes
                 </h3>
                 {cargando ? (
-                  <div className="h-[300px] flex items-center justify-center text-gray-500">
+                  <div className="h-[400px] flex items-center justify-center text-gray-500">
                     <RefreshCw className="w-6 h-6 animate-spin" />
                   </div>
                 ) : (
-                  <div className="h-[300px]">
+                  <div className="h-[400px]">
                     <Bar
                       data={comparacionMensajes}
                       options={{
@@ -337,128 +314,6 @@ export const Estadisticas: React.FC<{onLogout?: () => void}> = ({ onLogout }) =>
                     />
                   </div>
                 )}
-              </AnimatedCard>
-            </motion.div>
-
-            <motion.div variants={itemVariants}>
-              <AnimatedCard className="p-6">
-                <h3 className="text-lg font-semibold mb-4 text-gray-800 flex items-center gap-2">
-                  <Star className="w-5 h-5 text-red-600" />
-                  Nivel de Satisfacción
-                </h3>
-                {cargando ? (
-                  <div className="h-[300px] flex items-center justify-center text-gray-500">
-                    <RefreshCw className="w-6 h-6 animate-spin" />
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="h-[200px]">
-                      <Line
-                        data={datosSatisfaccion}
-                        options={{
-                          responsive: true,
-                          maintainAspectRatio: false,
-                          plugins: {
-                            legend: {
-                              display: false,
-                            },
-                            tooltip: {
-                              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                              padding: 12,
-                              callbacks: {
-                                label: function(context) {
-                                  return `Satisfacción: ${context.parsed.y.toFixed(1)}/5`;
-                                },
-                              },
-                            },
-                          },
-                          scales: {
-                            y: {
-                              beginAtZero: true,
-                              max: 5,
-                              grid: {
-                                color: 'rgba(0, 0, 0, 0.1)',
-                              },
-                              ticks: {
-                                stepSize: 1,
-                              },
-                            },
-                            x: {
-                              grid: {
-                                display: false,
-                              },
-                            },
-                          },
-                        }}
-                      />
-                    </div>
-                    <div className="mt-4 p-4 bg-red-50 rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-700">Satisfacción promedio</span>
-                        <span className="text-lg font-bold text-red-600">
-                          {formatearSatisfaccion(datos?.average_satisfaction_level ?? null)}
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div
-                          className="bg-red-600 h-3 rounded-full transition-all duration-500"
-                          style={{ width: `${porcentajeSatisfaccion}%` }}
-                        />
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">{porcentajeSatisfaccion}% de satisfacción</p>
-                    </div>
-                  </div>
-                )}
-              </AnimatedCard>
-            </motion.div>
-
-            <motion.div variants={itemVariants} className="lg:col-span-2">
-              <AnimatedCard className="p-6">
-                <h3 className="text-lg font-semibold mb-4 text-gray-800 flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-red-600" />
-                  Métricas de Rendimiento
-                </h3>
-                <div className="space-y-6">
-                  {cargando ? (
-                    <div className="h-[300px] flex items-center justify-center text-gray-500">
-                      <RefreshCw className="w-6 h-6 animate-spin" />
-                    </div>
-                  ) : datos ? (
-                    <>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="p-4 bg-blue-50 rounded-lg">
-                          <p className="text-xs text-gray-600 mb-1">Mensajes del día</p>
-                          <p className="text-2xl font-bold text-blue-600">{datos.daily_user_messages}</p>
-                        </div>
-                        <div className="p-4 bg-green-50 rounded-lg">
-                          <p className="text-xs text-gray-600 mb-1">Tiempo promedio</p>
-                          <p className="text-xl font-semibold text-green-600">
-                            {formatearTiempo(datos.average_response_time)}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="p-4 bg-purple-50 rounded-lg">
-                        <p className="text-xs text-gray-600 mb-2">Resumen general</p>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Total de usuarios:</span>
-                            <span className="font-semibold">{datos.total_users.toLocaleString()}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Total de mensajes:</span>
-                            <span className="font-semibold">{datos.total_user_messages.toLocaleString()}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Mensajes diarios:</span>
-                            <span className="font-semibold">{datos.daily_user_messages.toLocaleString()}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <p className="text-gray-500">No hay datos disponibles</p>
-                  )}
-                </div>
               </AnimatedCard>
             </motion.div>
           </motion.div>
